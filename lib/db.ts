@@ -6,20 +6,18 @@ import * as schema from '@/db/schema';
 // Use a placeholder connection string if DATABASE_URL is not set
 const connectionString = process.env.DATABASE_URL || 'postgresql://placeholder:placeholder@localhost:5432/placeholder';
 
-// Skip connection during build time
-const isBuilding = process.env.NODE_ENV === 'production' && !process.env.VERCEL_ENV;
+// Skip connection during Vercel build time (not runtime)
+// CI environment variable is set during Vercel builds
+const isBuildTime = process.env.CI === 'true' || process.env.NEXT_PHASE === 'phase-production-build';
 
 // Create a connection with appropriate settings
-// Disable connection pooling during build to prevent hanging
-const client = isBuilding 
-  ? postgres(connectionString, { max: 0 }) // No connections during build
+const client = isBuildTime 
+  ? postgres(connectionString, { max: 0, idle_timeout: 0, connect_timeout: 1 }) // Minimal connection during build
   : postgres(connectionString, {
       max: 1,
       idle_timeout: 20,
       connect_timeout: 10,
-      // Don't prepare statements by default (helps with build)
       prepare: false,
-      // Allow graceful degradation during build
       onnotice: () => {},
     });
 
