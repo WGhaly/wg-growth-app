@@ -1,0 +1,97 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Background Colors */
+    --bg-primary: #0F0F0F;
+    --bg-secondary: #1A1A1A;
+    --bg-tertiary: #2A2A2A;
+    
+    /* Text Colors */
+    --text-primary: #F5F5F5;
+    --text-secondary: #D1D1D1;
+    --text-tertiary: #A1A1A1;
+    
+    /* Accent Colors */
+    --accent-primary: #ccab52;
+    --accent-hover: #b89641;
+    --accent-active: #a48130;
+    
+    /* Border Colors */
+    --border-subtle: #2A2A2A;
+    --border-default: #3A3A3A;
+    --border-strong: #4A4A4A;
+    
+    /* Semantic Colors */
+    --semantic-success: #4CAF50;
+    --semantic-warning: #FF9800;
+    --semantic-error: #F44336;
+    --semantic-info: #2196F3;
+  }
+  
+  * {
+    @apply border-border-default;
+  }
+  
+  body {
+    @apply bg-bg-primary text-text-primary;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+  
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  /* Custom Scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    @apply bg-bg-primary;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    @apply bg-bg-tertiary rounded-full;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-accent-primary;
+  }
+}
+
+@layer components {
+  /* Category Badge Colors */
+  .badge-faith {
+    @apply bg-category-faith/20 text-category-faith border border-category-faith/30;
+  }
+  
+  .badge-character {
+    @apply bg-category-character/20 text-category-character border border-category-character/30;
+  }
+  
+  .badge-health {
+    @apply bg-category-health/20 text-category-health border border-category-health/30;
+  }
+  
+  .badge-finance {
+    @apply bg-category-finance/20 text-category-finance border border-category-finance/30;
+  }
+  
+  .badge-business {
+    @apply bg-category-business/20 text-category-business border border-category-business/30;
+  }
+  
+  .badge-relationships {
+    @apply bg-category-relationships/20 text-category-relationships border border-category-relationships/30;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}

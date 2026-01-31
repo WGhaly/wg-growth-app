@@ -1,0 +1,90 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { Button } from '@/components/ui/Button';
+import { Download, X } from 'lucide-react';
+
+export function PWAInstallPrompt() {
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [showPrompt, setShowPrompt] = useState(false);
+
+  useEffect(() => {
+    // Check if already installed
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+      return;
+    }
+
+    // Check if user has dismissed the prompt before
+    const dismissed = localStorage.getItem('pwa-install-dismissed');
+    if (dismissed) {
+      return;
+    }
+
+    const handler = (e: Event) => {
+      // Prevent the default install prompt
+      e.preventDefault();
+      // Store the event for later use
+      setDeferredPrompt(e);
+      // Show our custom prompt
+      setShowPrompt(true);
+    };
+
+    window.addEventListener('beforeinstallprompt', handler);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handler);
+    };
+  }, []);
+
+  const handleInstall = async () => {
+    if (!deferredPrompt) {
+      return;
+    }
+
+    // Show the install prompt
+    deferredPrompt.prompt();
+
+    // Wait for the user's response
+    const { outcome } = await deferredPrompt.userChoice;
+    console.log(`User response to install prompt: ${outcome}`);
+
+    // Clear the deferred prompt
+    setDeferredPrompt(null);
+    setShowPrompt(false);
+  };
+
+  const handleDismiss = () => {
+    setShowPrompt(false);
+    localStorage.setItem('pwa-install-dismissed', 'true');
+  };
+
+  if (!showPrompt) {
+    return null;
+  }
+
+  return (
+    <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:max-w-md z-50">
+      <div className="bg-bg-secondary border border-border-primary rounded-lg shadow-lg p-4">
+        <div className="flex items-start gap-3">
+          <div className="flex-shrink-0">
+            <Download className="w-6 h-6 text-accent-primary" />
+          </div>
+          <div className="flex-1">
+            <h3 className="font-semibold mb-1">Install WG Growth App</h3>
+            <p className="text-sm text-text-secondary mb-3">
+              Install the app for quick access and offline functionality
+            </p>
+            <div className="flex gap-2">
+              <Button onClick={handleInstall} className="flex-1">
+                Install
+              </Button>
+              <Button variant="secondary" onClick={handleDismiss} className="px-3">
+                <X size={18} />
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

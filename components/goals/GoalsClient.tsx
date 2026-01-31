@@ -1,0 +1,172 @@
+'use client'
+
+import { useState } from 'react'
+import { Card } from '@/components/ui/Card'
+import { Button } from '@/components/ui/Button'
+import { CreateGoalModal } from '@/components/goals/CreateGoalModal'
+import { GoalCard } from '@/components/goals/GoalCard'
+import { 
+  Target, 
+  Heart, 
+  User, 
+  Activity, 
+  DollarSign, 
+  Briefcase, 
+  Users,
+  Filter 
+} from 'lucide-react'
+
+interface Goal {
+  id: string
+  category: string
+  timeHorizon: string
+  title: string
+  description: string | null
+  targetDate: string | null
+  status: 'not_started' | 'in_progress' | 'completed' | 'abandoned'
+  completedAt: Date | null
+  createdAt: Date
+}
+
+interface GoalsClientProps {
+  initialGoals: Goal[]
+}
+
+const categories = [
+  { id: 'all', name: 'All Goals', icon: Target, color: 'text-[#ccab52]' },
+  { id: 'faith', name: 'Faith', icon: Heart, color: 'text-purple-400' },
+  { id: 'character', name: 'Character', icon: User, color: 'text-blue-400' },
+  { id: 'health', name: 'Health', icon: Activity, color: 'text-green-400' },
+  { id: 'finance', name: 'Finance', icon: DollarSign, color: 'text-yellow-400' },
+  { id: 'business', name: 'Business', icon: Briefcase, color: 'text-orange-400' },
+  { id: 'relationships', name: 'Relationships', icon: Users, color: 'text-pink-400' },
+]
+
+const statusFilters = [
+  { id: 'all', name: 'All' },
+  { id: 'not_started', name: 'Not Started' },
+  { id: 'in_progress', name: 'In Progress' },
+  { id: 'completed', name: 'Completed' },
+  { id: 'abandoned', name: 'Abandoned' },
+]
+
+export function GoalsClient({ initialGoals }: GoalsClientProps) {
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+  const [selectedCategory, setSelectedCategory] = useState('all')
+  const [selectedStatus, setSelectedStatus] = useState('all')
+
+  // Filter goals based on selected category and status
+  const filteredGoals = initialGoals.filter(goal => {
+    const categoryMatch = selectedCategory === 'all' || goal.category === selectedCategory
+    const statusMatch = selectedStatus === 'all' || goal.status === selectedStatus
+    return categoryMatch && statusMatch
+  })
+
+  // Count goals by category
+  const categoryCounts = categories.reduce((acc, cat) => {
+    if (cat.id === 'all') {
+      acc[cat.id] = initialGoals.length
+    } else {
+      acc[cat.id] = initialGoals.filter(g => g.category === cat.id).length
+    }
+    return acc
+  }, {} as Record<string, number>)
+
+  return (
+    <div className="container mx-auto px-4 py-8">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-3xl font-bold mb-2">Goals</h1>
+          <p className="text-text-tertiary">Set and track your life goals across all categories</p>
+        </div>
+        <Button onClick={() => setIsCreateModalOpen(true)}>
+          <Target className="w-4 h-4 mr-2" />
+          New Goal
+        </Button>
+      </div>
+
+      {/* Category Filter */}
+      <div className="flex items-center gap-2 mb-6 overflow-x-auto pb-2">
+        {categories.map((category) => {
+          const Icon = category.icon
+          const isActive = selectedCategory === category.id
+          return (
+            <button
+              key={category.id}
+              onClick={() => setSelectedCategory(category.id)}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors whitespace-nowrap ${
+                isActive
+                  ? 'bg-[#ccab52]/10 border-[#ccab52] text-[#ccab52]'
+                  : 'bg-white/5 border-white/10 text-text-tertiary hover:bg-white/10'
+              }`}
+            >
+              <Icon className="w-4 h-4" />
+              <span className="text-sm font-medium">{category.name}</span>
+              <span className={`text-xs px-2 py-0.5 rounded-full ${
+                isActive ? 'bg-[#ccab52]/20' : 'bg-white/10'
+              }`}>
+                {categoryCounts[category.id] || 0}
+              </span>
+            </button>
+          )
+        })}
+      </div>
+
+      {/* Status Filter */}
+      <div className="flex items-center gap-4 mb-6">
+        <div className="flex items-center gap-2 text-sm text-text-tertiary">
+          <Filter className="w-4 h-4" />
+          <span>Status:</span>
+        </div>
+        <div className="flex items-center gap-2">
+          {statusFilters.map((status) => (
+            <button
+              key={status.id}
+              onClick={() => setSelectedStatus(status.id)}
+              className={`px-3 py-1 rounded-lg text-sm transition-colors ${
+                selectedStatus === status.id
+                  ? 'bg-[#ccab52]/10 text-[#ccab52] border border-[#ccab52]'
+                  : 'bg-white/5 text-text-tertiary hover:bg-white/10'
+              }`}
+            >
+              {status.name}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Goals Grid */}
+      {filteredGoals.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filteredGoals.map((goal) => (
+            <GoalCard key={goal.id} goal={goal} />
+          ))}
+        </div>
+      ) : (
+        <Card className="p-12">
+          <div className="text-center">
+            <Target className="w-16 h-16 mx-auto mb-4 text-text-secondary" />
+            <h3 className="text-xl font-semibold mb-2">No goals found</h3>
+            <p className="text-text-tertiary mb-6">
+              {initialGoals.length === 0
+                ? "Start by creating your first goal"
+                : "No goals match your filters"}
+            </p>
+            <Button onClick={() => setIsCreateModalOpen(true)}>
+              <Target className="w-4 h-4 mr-2" />
+              Create Your First Goal
+            </Button>
+          </div>
+        </Card>
+      )}
+
+      {/* Create Goal Modal */}
+      <CreateGoalModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        defaultCategory={selectedCategory !== 'all' ? selectedCategory as any : undefined}
+      />
+    </div>
+  )
+}
