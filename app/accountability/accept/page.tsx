@@ -6,8 +6,9 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { acceptAccountabilityInvite } from '@/actions/accountability';
 import { Shield, CheckCircle, XCircle } from 'lucide-react';
+import { Suspense } from 'react';
 
-export default function AcceptInvitePage() {
+function AcceptInviteContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -112,5 +113,13 @@ export default function AcceptInvitePage() {
         </p>
       </Card>
     </div>
+  );
+}
+
+export default function AcceptInvitePage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-bg-primary flex items-center justify-center">Loading...</div>}>
+      <AcceptInviteContent />
+    </Suspense>
   );
 }

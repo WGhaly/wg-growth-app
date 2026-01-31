@@ -20,7 +20,7 @@ interface CashAccount {
   accountName: string;
   accountType: string;
   currentBalance: number;
-  isActive: boolean;
+  isActive: boolean | null;
   notes?: string | null;
 }
 
@@ -30,7 +30,7 @@ interface SavingsGoal {
   targetAmount: number;
   currentAmount: number;
   targetDate?: string | null;
-  isActive: boolean;
+  isActive: boolean | null;
   notes?: string | null;
   progress: number;
 }

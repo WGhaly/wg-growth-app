@@ -3,6 +3,9 @@ import { db } from '@/lib/db';
 import { profiles } from '@/db/schema';
 import { createBirthdaySeason } from '@/actions/life-seasons';
 
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 /**
  * Birthday Automation Cron Job
  * This endpoint should be called daily by a cron service (e.g., Vercel Cron, GitHub Actions)

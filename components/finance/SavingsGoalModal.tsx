@@ -19,7 +19,7 @@ interface SavingsGoalModalProps {
     targetAmount: number;
     currentAmount: number;
     targetDate?: string | null;
-    isActive: boolean;
+    isActive: boolean | null;
     notes?: string | null;
   };
 }

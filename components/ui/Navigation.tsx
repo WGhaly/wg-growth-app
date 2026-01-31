@@ -18,10 +18,8 @@ import {
   Lightbulb,
   Menu,
   X,
-  ArrowLeft,
-  ChevronDown
+  ArrowLeft
 } from 'lucide-react';
-import { Button } from './Button';
 
 const navigationItems = [
   { href: '/dashboard', label: 'Dashboard', icon: Home },

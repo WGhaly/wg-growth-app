@@ -18,7 +18,7 @@ interface CashAccountModalProps {
     accountName: string;
     accountType: string;
     currentBalance: number;
-    isActive: boolean;
+    isActive: boolean | null;
     notes?: string | null;
   };
 }

@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { users } from '@/db/schema';
 
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 // This cron job runs daily at midnight to pre-generate insights for all users
 export async function GET(request: Request) {
   try {

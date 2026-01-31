@@ -6,6 +6,9 @@ import {
   sendPrayerReminders,
 } from '@/actions/notification-triggers';
 
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 // This cron job runs every 5 minutes to check and send notifications
 export async function GET(request: Request) {
   try {

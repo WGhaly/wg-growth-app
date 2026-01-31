@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -8,7 +8,7 @@ import { Alert } from '@/components/ui/Alert';
 import { useWebAuthn } from '@/hooks/useWebAuthn';
 import { Fingerprint } from 'lucide-react';
 
-export default function BiometricVerifyPage() {
+function BiometricVerifyContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const email = searchParams.get('email');
@@ -92,5 +92,13 @@ export default function BiometricVerifyPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function BiometricVerifyPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-bg-primary flex items-center justify-center">Loading...</div>}>
+      <BiometricVerifyContent />
+    </Suspense>
   );
 }
