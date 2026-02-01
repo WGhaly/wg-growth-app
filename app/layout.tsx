@@ -20,7 +20,7 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: '/icon-192x192.png',
-    apple: '/icon-192x192.png',
+    apple: '/apple-touch-icon.png',
     shortcut: '/icon-192x192.png'
   },
   applicationName: 'WG Growth App',

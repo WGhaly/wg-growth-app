@@ -81,6 +81,11 @@ export function useWebAuthn() {
         throw new Error('Registration verification failed');
       }
 
+      // Store email for auto-biometric login
+      if (result.email && typeof window !== 'undefined') {
+        localStorage.setItem('biometric_email', result.email);
+      }
+
       setIsLoading(false);
       return true;
     } catch (err: any) {

@@ -80,7 +80,10 @@ export async function POST(req: NextRequest) {
       })
       .where(eq(users.id, user.id));
 
-    return NextResponse.json({ verified: true });
+    return NextResponse.json({ 
+      verified: true,
+      email: user.email 
+    });
   } catch (error) {
     console.error('WebAuthn registration verification error:', error);
     return NextResponse.json(
