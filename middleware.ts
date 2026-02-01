@@ -6,7 +6,15 @@ export default auth((req) => {
   const isAuthenticated = !!req.auth;
 
   // Public routes that don't require authentication
-  const publicRoutes = ['/auth/login', '/auth/register', '/auth/verify-email', '/auth/error'];
+  const publicRoutes = [
+    '/auth/login', 
+    '/auth/register', 
+    '/auth/verify-email', 
+    '/auth/error',
+    '/auth/auto-biometric',
+    '/auth/biometric-verify',
+    '/auth/setup-biometric'
+  ];
   const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route));
 
   // API routes are handled separately
