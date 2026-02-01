@@ -59,14 +59,15 @@ export async function POST() {
     const options = await generateWebAuthnRegistrationOptions(
       user.id,
       user.email,
+      displayName,
+      authenticatorDevices
+    );
+    
     console.log('[WebAuthn Register] Options.rp:', options.rp);
     console.log('[WebAuthn Register] Options.user:', { 
       id: options.user.id, 
       name: options.user.name 
     });
-      displayName,
-      authenticatorDevices
-    );
 
     console.log('[WebAuthn Register] Generated options successfully');
 

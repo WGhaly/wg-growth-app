@@ -59,9 +59,6 @@ export function useWebAuthn() {
       }
 
       const options = await optionsResponse.json();
-
-      // Log to server for debugging
-      await logErrorToServer('WebAuthn Registration', err);
       
       // Start registration with browser
       const registrationResponse: RegistrationResponseJSON = await startRegistration(options);
@@ -88,6 +85,9 @@ export function useWebAuthn() {
       return true;
     } catch (err: any) {
       console.error('WebAuthn registration error:', err);
+      
+      // Log to server for debugging
+      await logErrorToServer('WebAuthn Registration', err);
       
       // Provide user-friendly error messages
       let errorMessage = err.message || 'Failed to register biometric';
@@ -152,12 +152,13 @@ export function useWebAuthn() {
 
       setIsLoading(false);
       
-      // Log to server for debugging
-      await logErrorToServer('WebAuthn Authentication', err);
-      
       return true;
     } catch (err: any) {
       console.error('WebAuthn authentication error:', err);
+      
+      // Log to server for debugging
+      await logErrorToServer('WebAuthn Authentication', err);
+      
       setError(err.message || 'Failed to authenticate with biometric');
       setIsLoading(false);
       return false;
