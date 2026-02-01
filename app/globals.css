@@ -44,6 +44,12 @@
     scroll-behavior: smooth;
   }
   
+  /* iOS Safe Area Support */
+  body {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  
   /* Custom Scrollbar */
   ::-webkit-scrollbar {
     width: 8px;

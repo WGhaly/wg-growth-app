@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
@@ -16,10 +15,11 @@ import {
   User,
   Bell,
   Lightbulb,
-  Menu,
-  X,
-  ArrowLeft
+  ArrowLeft,
+  UserCheck,
+  MoreHorizontal
 } from 'lucide-react';
+import { MobileBottomNav } from './MobileBottomNav';
 
 const navigationItems = [
   { href: '/dashboard', label: 'Dashboard', icon: Home },
@@ -31,14 +31,14 @@ const navigationItems = [
   { href: '/finance', label: 'Finance', icon: DollarSign },
   { href: '/business', label: 'Business', icon: Briefcase },
   { href: '/life-seasons', label: 'Life Seasons', icon: BookOpen },
-  { href: '/accountability', label: 'Accountability', icon: Users },
+  { href: '/accountability', label: 'Accountability', icon: UserCheck },
   { href: '/identity', label: 'Identity', icon: User },
   { href: '/insights', label: 'Insights', icon: Lightbulb },
   { href: '/notifications', label: 'Notifications', icon: Bell },
+  { href: '/more', label: 'More', icon: MoreHorizontal },
 ];
 
 export function Navigation() {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
 
@@ -48,104 +48,41 @@ export function Navigation() {
     router.back();
   };
 
+  // Get page title based on current route
+  const getPageTitle = () => {
+    const currentItem = navigationItems.find(item => item.href === pathname);
+    if (currentItem) return currentItem.label;
+    
+    // Handle dynamic routes
+    if (pathname.startsWith('/goals/')) return 'Goal Details';
+    if (pathname.startsWith('/habits/')) return 'Habit Details';
+    if (pathname.startsWith('/routines/')) return 'Routine Details';
+    
+    return 'WG Growth';
+  };
+
   return (
     <>
-      {/* Mobile Header */}
-      <header className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-bg-primary border-b border-border-default">
-        <div className="flex items-center justify-between p-4">
-          <div className="flex items-center gap-3">
-            {showBackButton && (
-              <button
-                onClick={handleBack}
-                className="p-2 hover:bg-bg-secondary rounded-lg transition-colors"
-                aria-label="Go back"
-              >
-                <ArrowLeft size={20} className="text-text-primary" />
-              </button>
-            )}
-            <h1 className="text-lg font-semibold text-text-primary">
-              {navigationItems.find(item => item.href === pathname)?.label || 'WG Growth'}
-            </h1>
-          </div>
-          
-          <button
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="p-2 hover:bg-bg-secondary rounded-lg transition-colors"
-            aria-label="Toggle menu"
-          >
-            {isMobileMenuOpen ? (
-              <X size={24} className="text-text-primary" />
-            ) : (
-              <Menu size={24} className="text-text-primary" />
-            )}
-          </button>
+      {/* Mobile Header - Simplified, no hamburger */}
+      <header className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-bg-primary/95 backdrop-blur-md border-b border-border-default">
+        <div className="flex items-center px-4 py-3">
+          {showBackButton && (
+            <button
+              onClick={handleBack}
+              className="p-2 -ml-2 hover:bg-bg-secondary rounded-lg transition-colors mr-2"
+              aria-label="Go back"
+            >
+              <ArrowLeft size={20} className="text-text-primary" />
+            </button>
+          )}
+          <h1 className="text-lg font-semibold text-text-primary">
+            {getPageTitle()}
+          </h1>
         </div>
       </header>
 
-      {/* Mobile Menu Overlay */}
-      {isMobileMenuOpen && (
-        <div 
-          className="lg:hidden fixed inset-0 z-40 bg-black/50"
-          onClick={() => setIsMobileMenuOpen(false)}
-        />
-      )}
-
-      {/* Mobile Menu Sidebar */}
-      <nav
-        className={`
-          lg:hidden fixed top-0 right-0 bottom-0 z-50 w-72 bg-bg-primary border-l border-border-default
-          transform transition-transform duration-300 ease-in-out
-          ${isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'}
-        `}
-      >
-        <div className="flex items-center justify-between p-4 border-b border-border-default">
-          <h2 className="text-lg font-semibold text-text-primary">Menu</h2>
-          <button
-            onClick={() => setIsMobileMenuOpen(false)}
-            className="p-2 hover:bg-bg-secondary rounded-lg transition-colors"
-          >
-            <X size={20} className="text-text-secondary" />
-          </button>
-        </div>
-
-        <div className="overflow-y-auto h-[calc(100vh-73px)] p-4">
-          <div className="space-y-1">
-            {navigationItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = pathname === item.href;
-              
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className={`
-                    flex items-center gap-3 px-4 py-3 rounded-lg transition-all
-                    ${isActive 
-                      ? 'bg-accent-primary text-bg-primary font-medium' 
-                      : 'text-text-secondary hover:bg-bg-secondary hover:text-text-primary'
-                    }
-                  `}
-                >
-                  <Icon size={20} />
-                  <span>{item.label}</span>
-                </Link>
-              );
-            })}
-          </div>
-
-          <div className="mt-6 pt-6 border-t border-border-default">
-            <Link
-              href="/profile"
-              onClick={() => setIsMobileMenuOpen(false)}
-              className="flex items-center gap-3 px-4 py-3 rounded-lg text-text-secondary hover:bg-bg-secondary hover:text-text-primary transition-all"
-            >
-              <User size={20} />
-              <span>Profile</span>
-            </Link>
-          </div>
-        </div>
-      </nav>
+      {/* Mobile Bottom Navigation */}
+      <MobileBottomNav />
 
       {/* Desktop Sidebar */}
       <aside className="hidden lg:block fixed left-0 top-0 bottom-0 w-64 bg-bg-primary border-r border-border-default overflow-y-auto">
@@ -221,7 +158,7 @@ export function PageContainer({ children }: { children: React.ReactNode }) {
   return (
     <>
       <Navigation />
-      <main className="min-h-screen pt-16 lg:pl-64 lg:pt-20">
+      <main className="min-h-screen pt-14 pb-20 lg:pl-64 lg:pt-20 lg:pb-8">
         <div className="p-4 lg:p-8">
           {children}
         </div>

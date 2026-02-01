@@ -19,9 +19,9 @@ export const metadata: Metadata = {
     telephone: false
   },
   icons: {
-    icon: '/WG Logo.png',
-    apple: '/WG Logo.png',
-    shortcut: '/WG Logo.png'
+    icon: '/icon-192x192.png',
+    apple: '/icon-192x192.png',
+    shortcut: '/icon-192x192.png'
   },
   applicationName: 'WG Growth App',
   keywords: ['habits', 'routines', 'goals', 'productivity', 'personal growth', 'self improvement']
@@ -32,7 +32,8 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  themeColor: '#0F0F0F'
+  themeColor: '#0F0F0F',
+  viewportFit: 'cover' // This enables safe-area-inset on iOS
 };
 
 export default function RootLayout({
