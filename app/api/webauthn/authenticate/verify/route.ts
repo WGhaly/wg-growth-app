@@ -38,8 +38,11 @@ export async function POST(req: NextRequest) {
     console.log('[WebAuthn Auth Verify] Looking for credential ID:', credentialId);
     console.log('[WebAuthn Auth Verify] Available credential IDs:', existingCredentials.map((c: any) => c.credentialID));
     
+    // Normalize base64 strings by removing padding for comparison
+    const normalizeBase64 = (str: string) => str.replace(/=+$/, '');
+    
     const credential = existingCredentials.find(
-      (cred: any) => cred.credentialID === credentialId
+      (cred: any) => normalizeBase64(cred.credentialID) === normalizeBase64(credentialId)
     );
 
     if (!credential) {
