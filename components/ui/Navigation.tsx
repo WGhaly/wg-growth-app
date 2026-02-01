@@ -64,8 +64,8 @@ export function Navigation() {
   return (
     <>
       {/* Mobile Header - Simplified, no hamburger */}
-      <header className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-bg-primary/95 backdrop-blur-md border-b border-border-default">
-        <div className="flex items-center px-4 py-3">
+      <header className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-bg-primary/95 backdrop-blur-xl border-b border-border-default">
+        <div className="flex items-center px-5 py-4">
           {showBackButton && (
             <button
               onClick={handleBack}
@@ -158,8 +158,8 @@ export function PageContainer({ children }: { children: React.ReactNode }) {
   return (
     <>
       <Navigation />
-      <main className="min-h-screen pt-14 pb-20 lg:pl-64 lg:pt-20 lg:pb-8">
-        <div className="p-4 lg:p-8">
+      <main className="min-h-screen pt-14 pb-24 lg:pl-64 lg:pt-20 lg:pb-8">
+        <div className="p-5 lg:p-8 max-w-7xl mx-auto">
           {children}
         </div>
       </main>

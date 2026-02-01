@@ -40,24 +40,25 @@ export default async function MorePage() {
 
   return (
     <div className="min-h-screen bg-bg-primary">
-      {/* Simple Header */}
-      <header className="sticky top-0 z-10 bg-bg-primary/95 backdrop-blur-md border-b border-border-default">
-        <div className="px-4 py-4">
-          <h1 className="text-2xl font-bold text-text-primary">More</h1>
-          <p className="text-sm text-text-secondary mt-1">Explore all features</p>
+      {/* Enhanced Header */}
+      <header className="sticky top-0 z-10 bg-bg-primary/95 backdrop-blur-xl border-b border-border-default">
+        <div className="px-5 py-5">
+          <h1 className="text-display text-text-primary">More</h1>
+          <p className="text-caption text-text-secondary mt-1">Explore all features</p>
         </div>
       </header>
 
-      {/* Grid of Items */}
-      <div className="p-4 pb-24">
-        <div className="grid grid-cols-2 gap-3">
-          {moreItems.map((item) => {
+      {/* Grid of Items with improved spacing */}
+      <div className="p-5 pb-28">
+        <div className="grid grid-cols-2 gap-4">
+          {moreItems.map((item, index) => {
             const Icon = item.icon;
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                className="flex flex-col items-start p-4 bg-bg-secondary rounded-2xl border border-border-default hover:border-accent-primary/50 active:scale-95 transition-all"
+                style={{ animationDelay: `${index * 50}ms` }}
+                className="flex flex-col items-start p-5 bg-bg-secondary rounded-2xl border border-border-default active:scale-95 active:border-accent-primary/50 transition-smooth tap-highlight animate-fade-in"
               >
                 <div className="w-12 h-12 rounded-xl bg-accent-primary/10 flex items-center justify-center mb-3">
                   <Icon size={24} className="text-accent-primary" />

@@ -100,4 +100,55 @@
   .text-balance {
     text-wrap: balance;
   }
+  
+  /* Mobile-First Typography Scale */
+  .text-display {
+    @apply text-2xl font-bold leading-tight;
+  }
+  
+  .text-heading-1 {
+    @apply text-xl font-bold leading-tight;
+  }
+  
+  .text-heading-2 {
+    @apply text-lg font-semibold leading-snug;
+  }
+  
+  .text-body {
+    @apply text-base leading-relaxed;
+  }
+  
+  .text-caption {
+    @apply text-sm leading-normal;
+  }
+  
+  /* Enhanced Touch Targets */
+  .touch-target {
+    @apply min-h-[44px] min-w-[44px];
+  }
+  
+  /* Smooth Transitions */
+  .transition-smooth {
+    @apply transition-all duration-300 ease-out;
+  }
+  
+  /* Elevated Cards */
+  .card-elevated {
+    @apply shadow-lg shadow-black/20;
+  }
+  
+  /* Active State for Mobile */
+  .tap-highlight {
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  @media (min-width: 768px) {
+    .text-display {
+      @apply text-3xl;
+    }
+    
+    .text-heading-1 {
+      @apply text-2xl;
+    }
+  }
 }
