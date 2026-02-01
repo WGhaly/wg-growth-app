@@ -7,6 +7,32 @@ import type {
   AuthenticationResponseJSON 
 } from '@simplewebauthn/types';
 
+// Helper to log errors to server
+async function logErrorToServer(context: string, error: any) {
+  try {
+    await fetch('/api/logs/client-errors', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        context,
+        error: {
+          message: error.message,
+          name: error.name,
+          stack: error.stack,
+          toString: error.toString(),
+        },
+        url: window.location.href,
+        timestamp: new Date().toISOString(),
+      })
+    }).catch(() => {
+      // Silently fail if logging fails
+      console.warn('Failed to log error to server');
+    });
+  } catch (e) {
+    // Don't let logging errors break the app
+  }
+}
+
 export function useWebAuthn() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -34,6 +60,9 @@ export function useWebAuthn() {
 
       const options = await optionsResponse.json();
 
+      // Log to server for debugging
+      await logErrorToServer('WebAuthn Registration', err);
+      
       // Start registration with browser
       const registrationResponse: RegistrationResponseJSON = await startRegistration(options);
 
@@ -122,6 +151,10 @@ export function useWebAuthn() {
       }
 
       setIsLoading(false);
+      
+      // Log to server for debugging
+      await logErrorToServer('WebAuthn Authentication', err);
+      
       return true;
     } catch (err: any) {
       console.error('WebAuthn authentication error:', err);

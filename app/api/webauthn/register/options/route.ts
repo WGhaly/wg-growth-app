@@ -8,6 +8,11 @@ import { generateWebAuthnRegistrationOptions, credentialToAuthenticatorDevice } 
 export async function POST() {
   try {
     console.log('[WebAuthn Register] Starting registration options request');
+    console.log('[WebAuthn Register] Environment:', process.env.NODE_ENV);
+    console.log('[WebAuthn Register] Headers:', {
+      origin: process.env.WEBAUTHN_ORIGIN,
+      rpId: process.env.WEBAUTHN_RP_ID,
+    });
     
     // Get current session
     const session = await auth();
@@ -54,6 +59,11 @@ export async function POST() {
     const options = await generateWebAuthnRegistrationOptions(
       user.id,
       user.email,
+    console.log('[WebAuthn Register] Options.rp:', options.rp);
+    console.log('[WebAuthn Register] Options.user:', { 
+      id: options.user.id, 
+      name: options.user.name 
+    });
       displayName,
       authenticatorDevices
     );
