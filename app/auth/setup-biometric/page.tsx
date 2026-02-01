@@ -1,17 +1,56 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Alert } from '@/components/ui/Alert';
 import { useWebAuthn } from '@/hooks/useWebAuthn';
-import { Fingerprint, Shield, CheckCircle } from 'lucide-react';
+import { Fingerprint, Shield, CheckCircle, AlertCircle } from 'lucide-react';
 
 export default function SetupBiometricPage() {
   const router = useRouter();
   const { registerCredential, isLoading, error } = useWebAuthn();
   const [isSetup, setIsSetup] = useState(false);
+  const [browserSupport, setBrowserSupport] = useState<{
+    supported: boolean;
+    platformAuthenticator: boolean;
+    message?: string;
+  } | null>(null);
+
+  useEffect(() => {
+    // Check WebAuthn support on mount
+    async function checkSupport() {
+      if (!window.PublicKeyCredential) {
+        setBrowserSupport({
+          supported: false,
+          platformAuthenticator: false,
+          message: 'Your browser does not support biometric authentication. Please use a modern browser like Chrome, Safari, or Edge.'
+        });
+        return;
+      }
+
+      try {
+        const available = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+        setBrowserSupport({
+          supported: true,
+          platformAuthenticator: available,
+          message: available 
+            ? undefined 
+            : 'Platform authenticator not available. You may need to set up Face ID, Touch ID, or Windows Hello on your device.'
+        });
+      } catch (err) {
+        console.error('Error checking authenticator:', err);
+        setBrowserSupport({
+          supported: true,
+          platformAuthenticator: false,
+          message: 'Could not detect biometric capabilities. You can still try to set it up.'
+        });
+      }
+    }
+
+    checkSupport();
+  }, []);
 
   async function handleSetup() {
     const success = await registerCredential();
@@ -50,14 +89,39 @@ export default function SetupBiometricPage() {
         </CardHeader>
 
         <CardContent className="space-y-6">
+          {browserSupport && !browserSupport.supported && (
+            <Alert variant="error">
+              <AlertCircle className="w-5 h-5" />
+              <div>
+                <strong>Browser Not Supported</strong>
+                <p className="text-sm mt-1">{browserSupport.message}</p>
+              </div>
+            </Alert>
+          )}
+
+          {browserSupport && browserSupport.supported && !browserSupport.platformAuthenticator && browserSupport.message && (
+            <Alert variant="warning">
+              <AlertCircle className="w-5 h-5" />
+              <div>
+                <strong>Warning</strong>
+                <p className="text-sm mt-1">{browserSupport.message}</p>
+              </div>
+            </Alert>
+          )}
+
           {error && (
             <Alert variant="error">
-              {error}
+              <AlertCircle className="w-5 h-5" />
+              <div>
+                <strong>Setup Failed</strong>
+                <p className="text-sm mt-1">{error}</p>
+              </div>
             </Alert>
           )}
 
           {isSetup && (
             <Alert variant="success">
+              <CheckCircle className="w-5 h-5" />
               Biometric authentication enabled successfully!
             </Alert>
           )}
@@ -90,6 +154,7 @@ export default function SetupBiometricPage() {
                 onClick={handleSetup} 
                 fullWidth 
                 isLoading={isLoading}
+                disabled={browserSupport !== null && !browserSupport.supported}
               >
                 <Fingerprint size={18} className="mr-2" />
                 Setup Biometric Authentication

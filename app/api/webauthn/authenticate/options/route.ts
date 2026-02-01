@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { users } from '@/db/schema';
 import { eq } from 'drizzle-orm';
-import { generateWebAuthnAuthenticationOptions } from '@/lib/webauthn';
+import { generateWebAuthnAuthenticationOptions, credentialToAuthenticatorDevice } from '@/lib/webauthn';
 
 export async function POST(req: NextRequest) {
   try {
@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Parse existing credentials
+    // Parse existing credentials and convert to AuthenticatorDevice format
     const existingCredentials = Array.isArray(user.webauthnCredentials)
       ? user.webauthnCredentials
       : [];
@@ -38,8 +38,12 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const authenticatorDevices = existingCredentials.map((cred: any) => 
+      credentialToAuthenticatorDevice(cred)
+    );
+
     // Generate authentication options
-    const options = await generateWebAuthnAuthenticationOptions(existingCredentials);
+    const options = await generateWebAuthnAuthenticationOptions(authenticatorDevices);
 
     // Store challenge in database for verification
     await db

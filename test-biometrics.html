@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WebAuthn Biometric Test</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    button {
+      background: #007bff;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+      margin: 10px 5px;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    .result {
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 6px;
+      font-family: monospace;
+      font-size: 14px;
+    }
+    .success {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+    .error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+    .info {
+      background: #d1ecf1;
+      color: #0c5460;
+      border: 1px solid #bee5eb;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔐 WebAuthn Biometric Authentication Test</h1>
+    <p>This page tests if your browser and device support biometric authentication (Face ID, Touch ID, Windows Hello, etc.)</p>
+    
+    <div>
+      <button onclick="checkSupport()">1. Check Browser Support</button>
+      <button onclick="testRegistration()">2. Test Registration</button>
+      <button onclick="testAuthentication()">3. Test Authentication</button>
+      <button onclick="clearResults()">Clear Results</button>
+    </div>
+    
+    <div id="results"></div>
+  </div>
+
+  <script>
+    let challenge = null;
+    let credentialId = null;
+
+    function addResult(message, type = 'info') {
+      const results = document.getElementById('results');
+      const div = document.createElement('div');
+      div.className = `result ${type}`;
+      div.innerHTML = `<strong>${new Date().toLocaleTimeString()}</strong>: ${message}`;
+      results.appendChild(div);
+      results.scrollTop = results.scrollHeight;
+    }
+
+    function clearResults() {
+      document.getElementById('results').innerHTML = '';
+    }
+
+    async function checkSupport() {
+      addResult('Checking WebAuthn support...', 'info');
+      
+      // Check if PublicKeyCredential is available
+      if (!window.PublicKeyCredential) {
+        addResult('❌ WebAuthn is NOT supported in this browser', 'error');
+        return false;
+      }
+      
+      addResult('✅ WebAuthn is supported', 'success');
+      
+      // Check platform authenticator availability
+      try {
+        const available = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+        if (available) {
+          addResult('✅ Platform authenticator available (Face ID/Touch ID/Windows Hello)', 'success');
+        } else {
+          addResult('⚠️ Platform authenticator NOT available. You may need to use a security key.', 'error');
+        }
+      } catch (err) {
+        addResult(`❌ Error checking authenticator: ${err.message}`, 'error');
+      }
+      
+      // Check conditional mediation (autofill)
+      try {
+        const conditionalAvailable = await PublicKeyCredential.isConditionalMediationAvailable();
+        if (conditionalAvailable) {
+          addResult('✅ Conditional mediation (autofill) supported', 'success');
+        } else {
+          addResult('ℹ️ Conditional mediation not supported', 'info');
+        }
+      } catch (err) {
+        addResult(`ℹ️ Conditional mediation check not available`, 'info');
+      }
+      
+      return true;
+    }
+
+    async function testRegistration() {
+      addResult('Starting registration test...', 'info');
+      
+      if (!window.PublicKeyCredential) {
+        addResult('❌ WebAuthn not supported. Cannot register.', 'error');
+        return;
+      }
+      
+      try {
+        // Generate a random challenge
+        challenge = new Uint8Array(32);
+        crypto.getRandomValues(challenge);
+        
+        const userId = new Uint8Array(16);
+        crypto.getRandomValues(userId);
+        
+        const publicKeyCredentialCreationOptions = {
+          challenge: challenge,
+          rp: {
+            name: "WG Life OS Test",
+            id: window.location.hostname,
+          },
+          user: {
+            id: userId,
+            name: "test@example.com",
+            displayName: "Test User",
+          },
+          pubKeyCredParams: [
+            { alg: -7, type: "public-key" },  // ES256
+            { alg: -257, type: "public-key" } // RS256
+          ],
+          authenticatorSelection: {
+            authenticatorAttachment: "platform",
+            userVerification: "preferred",
+            residentKey: "preferred"
+          },
+          timeout: 60000,
+          attestation: "none"
+        };
+        
+        addResult('Prompting for biometric registration...', 'info');
+        
+        const credential = await navigator.credentials.create({
+          publicKey: publicKeyCredentialCreationOptions
+        });
+        
+        if (credential) {
+          credentialId = credential.id;
+          addResult('✅ Registration successful!', 'success');
+          addResult(`Credential ID: ${credential.id.substring(0, 20)}...`, 'success');
+          addResult(`Type: ${credential.type}`, 'success');
+          addResult('You can now test authentication', 'info');
+        } else {
+          addResult('❌ Registration failed: No credential returned', 'error');
+        }
+        
+      } catch (err) {
+        addResult(`❌ Registration error: ${err.name} - ${err.message}`, 'error');
+        console.error('Full error:', err);
+        
+        // Provide more specific error messages
+        if (err.name === 'NotAllowedError') {
+          addResult('⚠️ User cancelled or permission denied', 'error');
+        } else if (err.name === 'SecurityError') {
+          addResult('⚠️ Security error - check if running on HTTPS or localhost', 'error');
+        } else if (err.name === 'InvalidStateError') {
+          addResult('⚠️ Authenticator already registered', 'error');
+        }
+      }
+    }
+
+    async function testAuthentication() {
+      if (!credentialId) {
+        addResult('❌ Please complete registration first', 'error');
+        return;
+      }
+      
+      addResult('Starting authentication test...', 'info');
+      
+      try {
+        // Generate a new challenge for authentication
+        const authChallenge = new Uint8Array(32);
+        crypto.getRandomValues(authChallenge);
+        
+        const publicKeyCredentialRequestOptions = {
+          challenge: authChallenge,
+          rpId: window.location.hostname,
+          timeout: 60000,
+          userVerification: "preferred"
+        };
+        
+        addResult('Prompting for biometric authentication...', 'info');
+        
+        const assertion = await navigator.credentials.get({
+          publicKey: publicKeyCredentialRequestOptions
+        });
+        
+        if (assertion) {
+          addResult('✅ Authentication successful!', 'success');
+          addResult(`Credential ID: ${assertion.id.substring(0, 20)}...`, 'success');
+          addResult('Biometric authentication is working correctly!', 'success');
+        } else {
+          addResult('❌ Authentication failed: No assertion returned', 'error');
+        }
+        
+      } catch (err) {
+        addResult(`❌ Authentication error: ${err.name} - ${err.message}`, 'error');
+        console.error('Full error:', err);
+        
+        if (err.name === 'NotAllowedError') {
+          addResult('⚠️ User cancelled or permission denied', 'error');
+        } else if (err.name === 'SecurityError') {
+          addResult('⚠️ Security error - check if running on HTTPS or localhost', 'error');
+        }
+      }
+    }
+
+    // Auto-check support on load
+    window.addEventListener('load', () => {
+      setTimeout(() => checkSupport(), 500);
+    });
+  </script>
+</body>
+</html>

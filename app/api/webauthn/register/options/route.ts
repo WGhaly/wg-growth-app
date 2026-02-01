@@ -3,7 +3,7 @@ import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { users, profiles } from '@/db/schema';
 import { eq } from 'drizzle-orm';
-import { generateWebAuthnRegistrationOptions } from '@/lib/webauthn';
+import { generateWebAuthnRegistrationOptions, credentialToAuthenticatorDevice } from '@/lib/webauthn';
 
 export async function POST() {
   try {
@@ -36,17 +36,21 @@ export async function POST() {
       ? `${profile.firstName} ${profile.lastName}`
       : user.email;
 
-    // Parse existing credentials
+    // Parse existing credentials and convert to AuthenticatorDevice format
     const existingCredentials = Array.isArray(user.webauthnCredentials)
       ? user.webauthnCredentials
       : [];
+    
+    const authenticatorDevices = existingCredentials.map((cred: any) => 
+      credentialToAuthenticatorDevice(cred)
+    );
 
     // Generate registration options
     const options = await generateWebAuthnRegistrationOptions(
       user.id,
       user.email,
       displayName,
-      existingCredentials
+      authenticatorDevices
     );
 
     // Store challenge in database for verification

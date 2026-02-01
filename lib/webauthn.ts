@@ -20,9 +20,42 @@ import type {
 // WebAuthn Configuration
 // ============================================================================
 
-const RP_NAME = process.env.WEBAUTHN_RP_NAME || 'WG Life OS';
-const RP_ID = process.env.WEBAUTHN_RP_ID || 'localhost';
-const ORIGIN = process.env.WEBAUTHN_ORIGIN || 'http://localhost:3000';
+// Get configuration from environment or infer from deployment
+const getWebAuthnConfig = () => {
+  const isProduction = process.env.NODE_ENV === 'production';
+  const vercelUrl = process.env.VERCEL_URL;
+  
+  // Use environment variables if explicitly set
+  if (process.env.WEBAUTHN_RP_ID && process.env.WEBAUTHN_ORIGIN) {
+    return {
+      rpName: process.env.WEBAUTHN_RP_NAME || 'WG Life OS',
+      rpId: process.env.WEBAUTHN_RP_ID,
+      origin: process.env.WEBAUTHN_ORIGIN
+    };
+  }
+  
+  // Auto-detect for Vercel deployment
+  if (isProduction && vercelUrl) {
+    const domain = vercelUrl.replace(/^https?:\/\//, '');
+    return {
+      rpName: process.env.WEBAUTHN_RP_NAME || 'WG Life OS',
+      rpId: domain,
+      origin: `https://${domain}`
+    };
+  }
+  
+  // Default to localhost for development
+  return {
+    rpName: 'WG Life OS',
+    rpId: 'localhost',
+    origin: 'http://localhost:3000'
+  };
+};
+
+const config = getWebAuthnConfig();
+const RP_NAME = config.rpName;
+const RP_ID = config.rpId;
+const ORIGIN = config.origin;
 
 // ============================================================================
 // Registration Options

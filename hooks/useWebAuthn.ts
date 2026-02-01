@@ -17,13 +17,19 @@ export function useWebAuthn() {
     setError(null);
 
     try {
+      // Check if WebAuthn is supported
+      if (!window.PublicKeyCredential) {
+        throw new Error('WebAuthn is not supported in this browser');
+      }
+
       // Get registration options from server
       const optionsResponse = await fetch('/api/webauthn/register/options', {
         method: 'POST'
       });
 
       if (!optionsResponse.ok) {
-        throw new Error('Failed to get registration options');
+        const errorData = await optionsResponse.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to get registration options');
       }
 
       const options = await optionsResponse.json();
@@ -39,7 +45,8 @@ export function useWebAuthn() {
       });
 
       if (!verifyResponse.ok) {
-        throw new Error('Registration verification failed');
+        const errorData = await verifyResponse.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Registration verification failed');
       }
 
       const result = await verifyResponse.json();
@@ -52,7 +59,21 @@ export function useWebAuthn() {
       return true;
     } catch (err: any) {
       console.error('WebAuthn registration error:', err);
-      setError(err.message || 'Failed to register biometric');
+      
+      // Provide user-friendly error messages
+      let errorMessage = err.message || 'Failed to register biometric';
+      
+      if (err.name === 'NotAllowedError') {
+        errorMessage = 'Permission denied. Please allow biometric access and try again.';
+      } else if (err.name === 'InvalidStateError') {
+        errorMessage = 'This authenticator is already registered. Try using a different one.';
+      } else if (err.name === 'SecurityError') {
+        errorMessage = 'Security error. Make sure you are on a secure connection (HTTPS or localhost).';
+      } else if (err.name === 'AbortError') {
+        errorMessage = 'Operation cancelled or timed out. Please try again.';
+      }
+      
+      setError(errorMessage);
       setIsLoading(false);
       return false;
     }
