@@ -64,21 +64,31 @@ export function NotificationSettings() {
 
   const handleSubscribe = async () => {
     try {
-      // Register service worker
-      const registration = await navigator.serviceWorker.register('/sw.js');
-      await navigator.serviceWorker.ready;
+      // Request notification permission first
+      const permission = await Notification.requestPermission();
+      if (permission !== 'granted') {
+        setMessage('Notification permission denied');
+        return;
+      }
+
+      // Get or register service worker
+      let registration;
+      try {
+        registration = await navigator.serviceWorker.getRegistration();
+        if (!registration) {
+          registration = await navigator.serviceWorker.register('/sw.js');
+        }
+        await navigator.serviceWorker.ready;
+      } catch (swError) {
+        console.error('Service worker error:', swError);
+        setMessage('Service worker registration failed');
+        return;
+      }
 
       // Get VAPID public key
       const keyResult = await getVapidPublicKey();
       if (!keyResult.success || !keyResult.data) {
         setMessage('Push notifications not configured on server');
-        return;
-      }
-
-      // Request notification permission
-      const permission = await Notification.requestPermission();
-      if (permission !== 'granted') {
-        setMessage('Notification permission denied');
         return;
       }
 
@@ -98,7 +108,7 @@ export function NotificationSettings() {
       }
     } catch (error) {
       console.error('Subscribe error:', error);
-      setMessage('Failed to subscribe to notifications');
+      setMessage(`Failed to subscribe: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 

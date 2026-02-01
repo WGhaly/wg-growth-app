@@ -11,14 +11,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       name: 'credentials',
       credentials: {
         email: { label: 'Email', type: 'email' },
-        password: { label: 'Password', type: 'password' }
+        password: { label: 'Password', type: 'password' },
+        biometricVerified: { label: 'Biometric Verified', type: 'text' }
       },
       async authorize(credentials) {
         try {
           console.log('[authorize] Starting authorization...');
           
-          if (!credentials?.email || !credentials?.password) {
-            console.log('[authorize] Missing credentials');
+          if (!credentials?.email) {
+            console.log('[authorize] Missing email');
             return null;
           }
 
@@ -36,6 +37,44 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           }
 
           console.log('[authorize] User found:', user.email);
+
+          // Handle biometric verification
+          if (credentials.biometricVerified === 'true') {
+            console.log('[authorize] Biometric verification flow');
+            
+            // Check if biometric is enabled
+            if (!user.biometricEnabled) {
+              console.log('[authorize] Biometric not enabled');
+              return null;
+            }
+
+            // Check recent biometric verification (within 30 seconds)
+            if (user.lastBiometricVerification) {
+              const timeSinceVerification = Date.now() - user.lastBiometricVerification.getTime();
+              if (timeSinceVerification > 30000) {
+                console.log('[authorize] Biometric verification expired');
+                return null;
+              }
+            } else {
+              console.log('[authorize] No recent biometric verification');
+              return null;
+            }
+
+            console.log('[authorize] Biometric authorization successful');
+            // Return user data for session
+            return {
+              id: user.id,
+              email: user.email,
+              role: user.role,
+              biometricEnabled: user.biometricEnabled || false
+            };
+          }
+
+          // Handle password verification
+          if (!credentials?.password) {
+            console.log('[authorize] Missing password');
+            return null;
+          }
 
           // Check if account is locked
           if (user.isLocked && user.lockedUntil && user.lockedUntil > new Date()) {

@@ -155,6 +155,18 @@ export function useWebAuthn() {
         throw new Error('Authentication verification failed');
       }
 
+      // Sign in with NextAuth using biometric verification
+      const { signIn } = await import('next-auth/react');
+      const signInResult = await signIn('credentials', {
+        email,
+        biometricVerified: 'true',
+        redirect: false
+      });
+
+      if (signInResult?.error) {
+        throw new Error('Failed to create session');
+      }
+
       setIsLoading(false);
       
       return true;

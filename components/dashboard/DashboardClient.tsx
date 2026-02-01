@@ -235,27 +235,27 @@ export default function DashboardClient({ stats, todayCompletions, activeGoals }
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <Link href="/goals">
-                <Button variant="secondary" className="w-full">
+                <Button variant="secondary" className="w-full h-[44px] flex items-center justify-center">
                   <Target size={18} className="mr-2" />
-                  New Goal
+                  <span>New Goal</span>
                 </Button>
               </Link>
               <Link href="/routines">
-                <Button variant="secondary" className="w-full">
+                <Button variant="secondary" className="w-full h-[44px] flex items-center justify-center">
                   <Clock size={18} className="mr-2" />
-                  New Routine
+                  <span>New Routine</span>
                 </Button>
               </Link>
               <Link href="/habits">
-                <Button variant="secondary" className="w-full">
+                <Button variant="secondary" className="w-full h-[44px] flex items-center justify-center">
                   <TrendingUp size={18} className="mr-2" />
-                  Log Habit
+                  <span>Log Habit</span>
                 </Button>
               </Link>
               <Link href="/identity">
-                <Button variant="secondary" className="w-full">
+                <Button variant="secondary" className="w-full h-[44px] flex items-center justify-center">
                   <Heart size={18} className="mr-2" />
-                  Edit Identity
+                  <span>Edit Identity</span>
                 </Button>
               </Link>
             </div>
