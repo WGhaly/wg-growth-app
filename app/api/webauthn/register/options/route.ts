@@ -7,12 +7,17 @@ import { generateWebAuthnRegistrationOptions, credentialToAuthenticatorDevice } 
 
 export async function POST() {
   try {
+    console.log('[WebAuthn Register] Starting registration options request');
+    
     // Get current session
     const session = await auth();
     
     if (!session?.user) {
+      console.log('[WebAuthn Register] Unauthorized - no session');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    console.log('[WebAuthn Register] User authenticated:', session.user.id);
 
     // Get user data
     const [user] = await db
@@ -53,13 +58,15 @@ export async function POST() {
       authenticatorDevices
     );
 
+    console.log('[WebAuthn Register] Generated options successfully');
+
     // Store challenge in database for verification
     await db
       .update(users)
       .set({ webauthnChallenge: options.challenge })
       .where(eq(users.id, user.id));
 
-    return NextResponse.json(options);
+    return NextResp[WebAuthn Register] Error generating options
   } catch (error) {
     console.error('WebAuthn registration options error:', error);
     return NextResponse.json(

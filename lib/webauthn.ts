@@ -23,10 +23,13 @@ import type {
 // Get configuration from environment or infer from deployment
 const getWebAuthnConfig = () => {
   const isProduction = process.env.NODE_ENV === 'production';
-  const vercelUrl = process.env.VERCEL_URL;
   
   // Use environment variables if explicitly set
   if (process.env.WEBAUTHN_RP_ID && process.env.WEBAUTHN_ORIGIN) {
+    console.log('[WebAuthn] Using explicit configuration:', {
+      rpId: process.env.WEBAUTHN_RP_ID,
+      origin: process.env.WEBAUTHN_ORIGIN
+    });
     return {
       rpName: process.env.WEBAUTHN_RP_NAME || 'WG Life OS',
       rpId: process.env.WEBAUTHN_RP_ID,
@@ -34,17 +37,39 @@ const getWebAuthnConfig = () => {
     };
   }
   
-  // Auto-detect for Vercel deployment
+  // Try to get from NEXTAUTH_URL or PUBLIC_APP_URL
+  const appUrl = process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL;
+  if (isProduction && appUrl) {
+    try {
+      const url = new URL(appUrl);
+      const rpId = url.hostname;
+      const origin = url.origin;
+      console.log('[WebAuthn] Using app URL configuration:', { rpId, origin, source: appUrl });
+      return {
+        rpName: process.env.WEBAUTHN_RP_NAME || 'WG Life OS',
+        rpId,
+        origin
+      };
+    } catch (err) {
+      console.error('[WebAuthn] Failed to parse app URL:', appUrl, err);
+    }
+  }
+  
+  // Try Vercel URL as fallback
+  const vercelUrl = process.env.VERCEL_URL;
   if (isProduction && vercelUrl) {
     const domain = vercelUrl.replace(/^https?:\/\//, '');
-    return {
+    const config = {
       rpName: process.env.WEBAUTHN_RP_NAME || 'WG Life OS',
       rpId: domain,
       origin: `https://${domain}`
     };
+    console.log('[WebAuthn] Using VERCEL_URL configuration:', config);
+    return config;
   }
   
   // Default to localhost for development
+  console.log('[WebAuthn] Using localhost configuration');
   return {
     rpName: 'WG Life OS',
     rpId: 'localhost',
@@ -56,6 +81,9 @@ const config = getWebAuthnConfig();
 const RP_NAME = config.rpName;
 const RP_ID = config.rpId;
 const ORIGIN = config.origin;
+
+// Log configuration on startup (helps with debugging)
+console.log('[WebAuthn] Configuration loaded:', { RP_NAME, RP_ID, ORIGIN });
 
 // ============================================================================
 // Registration Options
