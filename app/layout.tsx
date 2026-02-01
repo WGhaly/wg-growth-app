@@ -12,6 +12,7 @@ export const metadata: Metadata = {
   description: 'Your personal growth companion for habits, routines, goals, and more. Track progress and build a better life.',
   manifest: '/manifest.json',
   appleWebApp: {
+    capable: true,
     statusBarStyle: 'black-translucent',
     title: 'WG Growth'
   },
@@ -24,7 +25,11 @@ export const metadata: Metadata = {
     shortcut: '/icon-192x192.png'
   },
   applicationName: 'WG Growth App',
-  keywords: ['habits', 'routines', 'goals', 'productivity', 'personal growth', 'self improvement']
+  keywords: ['habits', 'routines', 'goals', 'productivity', 'personal growth', 'self improvement'],
+  other: {
+    'mobile-web-app-capable': 'yes',
+    'apple-mobile-web-app-capable': 'yes'
+  }
 };
 
 export const viewport: Viewport = {
@@ -43,7 +48,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={inter.variable}>
-      <head />
+      <head>
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="mobile-web-app-capable" content="yes" />
+      </head>
       <body className="min-h-screen antialiased">
         <SessionProvider>
           <OnlineStatus />
