@@ -14,16 +14,8 @@ export default function AutoBiometricLoginPage() {
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
-  const [isStandalone, setIsStandalone] = useState(true);
 
   useEffect(() => {
-    // Check if running as PWA
-    if (typeof window !== 'undefined') {
-      const standalone = window.matchMedia('(display-mode: standalone)').matches || 
-                        (window.navigator as any).standalone === true;
-      setIsStandalone(standalone);
-    }
-
     // If already logged in, redirect to dashboard
     if (status === 'authenticated') {
       router.push('/dashboard');
