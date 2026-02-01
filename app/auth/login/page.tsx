@@ -16,7 +16,24 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [email, setEmail] = useState('');
+  const [hasBiometricEmail, setHasBiometricEmail] = useState(false);
+  const [isStandalone, setIsStandalone] = useState(true);
   const { authenticateWithCredential, isLoading: isBiometricLoading } = useWebAuthn();
+
+  // Check for stored biometric email and standalone mode
+  useState(() => {
+    if (typeof window !== 'undefined') {
+      const storedEmail = localStorage.getItem('biometric_email');
+      if (storedEmail) {
+        setEmail(storedEmail);
+        setHasBiometricEmail(true);
+      }
+      // Check if running as PWA
+      const standalone = window.matchMedia('(display-mode: standalone)').matches || 
+                        (window.navigator as any).standalone === true;
+      setIsStandalone(standalone);
+    }
+  });
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -49,12 +66,20 @@ export default function LoginPage() {
   }
 
   async function handleBiometricLogin() {
-    if (!email) {
-      setError('Please enter your email first');
-      return;
+    // Get stored email if not already set
+    let emailToUse = email;
+    if (!emailToUse) {
+      const storedEmail = localStorage.getItem('biometric_email');
+      if (storedEmail) {
+        emailToUse = storedEmail;
+        setEmail(storedEmail);
+      } else {
+        setError('Please enter your email first or set up biometrics');
+        return;
+      }
     }
 
-    const success = await authenticateWithCredential(email);
+    const success = await authenticateWithCredential(emailToUse);
 
     if (success) {
       router.push('/dashboard');
@@ -65,6 +90,13 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-bg-primary">
+      {!isStandalone && (
+        <div className="fixed top-0 left-0 right-0 bg-accent-primary text-white px-4 py-3 text-center z-50">
+          <p className="text-sm font-medium">
+            📱 For the best app experience: Tap Share → Add to Home Screen
+          </p>
+        </div>
+      )}
       <Card className="w-full max-w-md" variant="elevated">
         <CardHeader>
           <CardTitle>Welcome Back</CardTitle>
@@ -120,7 +152,7 @@ export default function LoginPage() {
               fullWidth
               onClick={handleBiometricLogin}
               isLoading={isBiometricLoading}
-              disabled={!email}
+              disabled={!email && !hasBiometricEmail}
             >
               <Fingerprint size={18} className="mr-2" />
               Sign in with Biometric
