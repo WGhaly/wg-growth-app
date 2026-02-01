@@ -89,8 +89,12 @@ export async function POST(req: NextRequest) {
     });
   } catch (error) {
     console.error('WebAuthn authentication verification error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Verification failed';
     return NextResponse.json(
-      { error: 'Verification failed' },
+      { 
+        error: 'Authentication verification failed',
+        details: errorMessage
+      },
       { status: 500 }
     );
   }

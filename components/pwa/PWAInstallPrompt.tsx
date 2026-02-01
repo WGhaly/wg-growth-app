@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/Button';
-import { Download, X } from 'lucide-react';
+import { Download, X, Share } from 'lucide-react';
 
 export function PWAInstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [showPrompt, setShowPrompt] = useState(false);
+  const [isIOS, setIsIOS] = useState(false);
 
   useEffect(() => {
     // Check if already installed
@@ -14,9 +15,19 @@ export function PWAInstallPrompt() {
       return;
     }
 
+    // Detect iOS
+    const iOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+    setIsIOS(iOS);
+
     // Check if user has dismissed the prompt before
     const dismissed = localStorage.getItem('pwa-install-dismissed');
     if (dismissed) {
+      return;
+    }
+
+    // On iOS, always show the prompt since beforeinstallprompt doesn't work
+    if (iOS) {
+      setShowPrompt(true);
       return;
     }
 
@@ -67,19 +78,31 @@ export function PWAInstallPrompt() {
       <div className="bg-bg-secondary border border-border-primary rounded-lg shadow-lg p-4">
         <div className="flex items-start gap-3">
           <div className="flex-shrink-0">
-            <Download className="w-6 h-6 text-accent-primary" />
+            {isIOS ? (
+              <Share className="w-6 h-6 text-accent-primary" />
+            ) : (
+              <Download className="w-6 h-6 text-accent-primary" />
+            )}
           </div>
           <div className="flex-1">
             <h3 className="font-semibold mb-1">Install WG Growth App</h3>
-            <p className="text-sm text-text-secondary mb-3">
-              Install the app for quick access and offline functionality
-            </p>
+            {isIOS ? (
+              <p className="text-sm text-text-secondary mb-3">
+                Tap <Share className="inline w-4 h-4 mx-1" /> (Share button) at the bottom, then scroll and tap "Add to Home Screen"
+              </p>
+            ) : (
+              <p className="text-sm text-text-secondary mb-3">
+                Install the app for quick access and offline functionality
+              </p>
+            )}
             <div className="flex gap-2">
-              <Button onClick={handleInstall} className="flex-1">
-                Install
-              </Button>
-              <Button variant="secondary" onClick={handleDismiss} className="px-3">
-                <X size={18} />
+              {!isIOS && deferredPrompt && (
+                <Button onClick={handleInstall} className="flex-1">
+                  Install
+                </Button>
+              )}
+              <Button variant="secondary" onClick={handleDismiss} className={isIOS ? "w-full" : "px-3"}>
+                {isIOS ? 'Got it' : <X size={18} />}
               </Button>
             </div>
           </div>
