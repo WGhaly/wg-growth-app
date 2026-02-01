@@ -66,9 +66,9 @@ export async function POST() {
       .set({ webauthnChallenge: options.challenge })
       .where(eq(users.id, user.id));
 
-    return NextResp[WebAuthn Register] Error generating options
+    return NextResponse.json(options);
   } catch (error) {
-    console.error('WebAuthn registration options error:', error);
+    console.error('[WebAuthn Register] Error generating options:', error);
     return NextResponse.json(
       { error: 'Failed to generate registration options' },
       { status: 500 }
