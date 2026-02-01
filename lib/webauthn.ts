@@ -26,19 +26,21 @@ const getWebAuthnConfig = () => {
   
   // Use environment variables if explicitly set
   if (process.env.WEBAUTHN_RP_ID && process.env.WEBAUTHN_ORIGIN) {
+    const rpId = process.env.WEBAUTHN_RP_ID.trim();
+    const origin = process.env.WEBAUTHN_ORIGIN.trim();
     console.log('[WebAuthn] Using explicit configuration:', {
-      rpId: process.env.WEBAUTHN_RP_ID,
-      origin: process.env.WEBAUTHN_ORIGIN
+      rpId,
+      origin
     });
     return {
-      rpName: process.env.WEBAUTHN_RP_NAME || 'WG Life OS',
-      rpId: process.env.WEBAUTHN_RP_ID,
-      origin: process.env.WEBAUTHN_ORIGIN
+      rpName: (process.env.WEBAUTHN_RP_NAME || 'WG Life OS').trim(),
+      rpId,
+      origin
     };
   }
   
   // Try to get from NEXTAUTH_URL or PUBLIC_APP_URL
-  const appUrl = process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL;
+  const appUrl = (process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL)?.trim();
   if (isProduction && appUrl) {
     try {
       const url = new URL(appUrl);
@@ -56,11 +58,11 @@ const getWebAuthnConfig = () => {
   }
   
   // Try Vercel URL as fallback
-  const vercelUrl = process.env.VERCEL_URL;
+  const vercelUrl = process.env.VERCEL_URL?.trim();
   if (isProduction && vercelUrl) {
-    const domain = vercelUrl.replace(/^https?:\/\//, '');
+    const domain = vercelUrl.replace(/^https?:\/\//, '').trim();
     const config = {
-      rpName: process.env.WEBAUTHN_RP_NAME || 'WG Life OS',
+      rpName: (process.env.WEBAUTHN_RP_NAME || 'WG Life OS').trim(),
       rpId: domain,
       origin: `https://${domain}`
     };
