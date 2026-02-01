@@ -7,8 +7,10 @@ import { generateWebAuthnAuthenticationOptions, credentialToAuthenticatorDevice 
 export async function POST(req: NextRequest) {
   try {
     const { email } = await req.json();
+    console.log('[WebAuthn Auth Options] Request for email:', email);
 
     if (!email) {
+      console.error('[WebAuthn Auth Options] No email provided');
       return NextResponse.json({ error: 'Email is required' }, { status: 400 });
     }
 
@@ -18,6 +20,8 @@ export async function POST(req: NextRequest) {
       .from(users)
       .where(eq(users.email, email))
       .limit(1);
+    
+    console.log('[WebAuthn Auth Options] User found:', !!user, 'Biometric enabled:', user?.biometricEnabled);
 
     if (!user || !user.biometricEnabled) {
       return NextResponse.json(
@@ -30,8 +34,11 @@ export async function POST(req: NextRequest) {
     const existingCredentials = Array.isArray(user.webauthnCredentials)
       ? user.webauthnCredentials
       : [];
+    
+    console.log('[WebAuthn Auth Options] Credentials count:', existingCredentials.length);
 
     if (existingCredentials.length === 0) {
+      console.error('[WebAuthn Auth Options] No credentials registered for user');
       return NextResponse.json(
         { error: 'No credentials registered' },
         { status: 400 }
@@ -50,7 +57,8 @@ export async function POST(req: NextRequest) {
       .update(users)
       .set({ webauthnChallenge: options.challenge })
       .where(eq(users.id, user.id));
-
+    
+    console.log('[WebAuthn Auth Options] Options generated successfully, challenge stored');
     return NextResponse.json(options);
   } catch (error) {
     console.error('WebAuthn authentication options error:', error);
