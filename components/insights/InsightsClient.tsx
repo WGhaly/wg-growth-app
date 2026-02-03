@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { MobileFilterSelect } from '@/components/ui/MobileFilterSelect';
-import { RefreshCw, Filter, Sparkles } from 'lucide-react';
+import { RefreshCw, Sparkles } from 'lucide-react';
 import { InsightCard } from './InsightCard';
 import { Card, CardContent } from '@/components/ui/Card';
 

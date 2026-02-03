@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Trash2, Target, TrendingUp, TrendingDown, MoreVertical, Plus, CheckCircle } from 'lucide-react';
+import { Trash2, Target, TrendingUp, TrendingDown, Plus, CheckCircle } from 'lucide-react';
 import { Card, CardHeader, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { SwipeActions } from '@/components/ui/SwipeActions';
@@ -24,7 +24,6 @@ interface HabitCardProps {
 }
 
 export default function HabitCard({ habit }: HabitCardProps) {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showLogModal, setShowLogModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);

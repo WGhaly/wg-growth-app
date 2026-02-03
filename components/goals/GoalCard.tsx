@@ -13,8 +13,7 @@ import {
   Circle, 
   Play, 
   XCircle,
-  Trash2,
-  MoreVertical 
+  Trash2
 } from 'lucide-react'
 import { format } from 'date-fns'
 
@@ -70,7 +69,6 @@ const timeHorizonLabels: Record<string, string> = {
 
 export function GoalCard({ goal }: GoalCardProps) {
   const router = useRouter()
-  const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
 
   const statusInfo = statusConfig[goal.status]
@@ -80,7 +78,6 @@ export function GoalCard({ goal }: GoalCardProps) {
     setIsLoading(true)
     const result = await updateGoalStatus(goal.id, newStatus)
     setIsLoading(false)
-    setIsMenuOpen(false)
     
     if (!result.error) {
       router.refresh()
@@ -207,8 +204,7 @@ export function GoalCard({ goal }: GoalCardProps) {
           </div>
         </div>
 
-      </Card>
-    </SwipeActions* Time Horizon & Target Date */}
+        {/* Time Horizon & Target Date */}
         <div className="flex items-center gap-4 text-xs text-text-tertiary">
           <div className="flex items-center gap-1">
             <Clock className="w-3 h-3" />
@@ -231,5 +227,6 @@ export function GoalCard({ goal }: GoalCardProps) {
         )}
       </div>
     </Card>
+    </SwipeActions>
   )
 }

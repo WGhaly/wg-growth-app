@@ -6,7 +6,7 @@ import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { SwipeActions } from '@/components/ui/SwipeActions'
 import { logRoutineCompletion, deleteRoutine } from '@/actions/routines'
-import { Clock, CheckCircle, MinusCircle, Trash2, MoreVertical, Target } from 'lucide-react'
+import { Clock, CheckCircle, MinusCircle, Trash2, Target } from 'lucide-react'
 
 interface RoutineCardProps {
   routine: {
@@ -32,7 +32,6 @@ const typeColors = {
 
 export function RoutineCard({ routine }: RoutineCardProps) {
   const router = useRouter()
-  const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [showCompletionModal, setShowCompletionModal] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [completionLevel, setCompletionLevel] = useState<'none' | 'minimum' | 'ideal'>('ideal')
