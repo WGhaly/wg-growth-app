@@ -193,14 +193,14 @@ export default function HabitCard({ habit }: HabitCardProps) {
             onClick={() => setShowLogModal(true)}
             variant="secondary"
             className="w-full"
-            d
-      </SwipeActions>isabled={habit.hasLoggedToday}
+            disabled={habit.hasLoggedToday}
           >
             <Plus size={18} className="mr-2" />
             {habit.hasLoggedToday ? 'Already Logged Today' : 'Log Today'}
           </Button>
         </CardContent>
       </Card>
+      </SwipeActions>
 
       {/* Log Habit Modal */}
       {showLogModal && (
