@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { MobileFilterSelect } from '@/components/ui/MobileFilterSelect';
 import { Plus, Briefcase, TrendingUp, Play, Pause, DollarSign, X } from 'lucide-react';
 import { CompanyCard } from './CompanyCard';
 import { AddCompanyModal } from './AddCompanyModal';
@@ -141,31 +142,19 @@ export function BusinessClient({ initialCompanies }: BusinessClientProps) {
           </Card>
         </div>
 
-        {/* Status Filter Tabs */}
-        <div className="flex gap-2 overflow-x-auto pb-2">
-          {statusOptions.map(({ value, label, icon: Icon }) => (
-            <button
-              key={value}
-              onClick={() => setSelectedStatus(value)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg whitespace-nowrap transition-colors ${
-                selectedStatus === value
-                  ? 'bg-accent-primary text-bg-primary'
-                  : 'bg-bg-secondary text-text-secondary hover:text-text-primary'
-              }`}
-            >
-              <Icon size={16} />
-              {label}
-              <span
-                className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                  selectedStatus === value
-                    ? 'bg-bg-primary/20 text-bg-primary'
-                    : 'bg-bg-primary text-text-tertiary'
-                }`}
-              >
-                {counts[value]}
-              </span>
-            </button>
-          ))}
+        {/* Status Filter */}
+        <div className="mb-6">
+          <MobileFilterSelect
+            label="Company Status"
+            options={statusOptions.map(opt => ({
+              id: opt.value,
+              label: opt.label,
+              count: counts[opt.value],
+              icon: <opt.icon size={16} />,
+            }))}
+            value={selectedStatus}
+            onChange={(value) => setSelectedStatus(value as Status)}
+          />
         </div>
 
         {/* Companies Grid */}

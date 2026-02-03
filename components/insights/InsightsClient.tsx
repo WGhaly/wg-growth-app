@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
+import { MobileFilterSelect } from '@/components/ui/MobileFilterSelect';
 import { RefreshCw, Filter, Sparkles } from 'lucide-react';
 import { InsightCard } from './InsightCard';
 import { Card, CardContent } from '@/components/ui/Card';
@@ -82,45 +83,37 @@ export function InsightsClient({ initialInsights }: InsightsClientProps) {
           </Button>
         </div>
 
-        {/* Type Filters */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-2">
-          <Filter size={18} className="text-text-tertiary flex-shrink-0" />
-          {(['all', 'achievement', 'warning', 'recommendation', 'pattern'] as FilterType[]).map(type => (
-            <button
-              key={type}
-              onClick={() => setTypeFilter(type)}
-              className={`px-4 py-2 rounded-lg whitespace-nowrap transition-colors ${
-                typeFilter === type
-                  ? 'bg-accent-primary text-bg-primary'
-                  : 'bg-bg-secondary text-text-secondary hover:text-text-primary'
-              }`}
-            >
-              {type.charAt(0).toUpperCase() + type.slice(1)}
-              <span className="ml-2 text-xs opacity-75">
-                ({type === 'all' ? counts.all : counts[type]})
-              </span>
-            </button>
-          ))}
+        {/* Type Filter */}
+        <div className="mb-6">
+          <MobileFilterSelect
+            label="Insight Type"
+            options={[
+              { id: 'all', label: 'All Types', count: counts.all },
+              { id: 'achievement', label: 'Achievement', count: counts.achievement },
+              { id: 'warning', label: 'Warning', count: counts.warning },
+              { id: 'recommendation', label: 'Recommendation', count: counts.recommendation },
+              { id: 'pattern', label: 'Pattern', count: counts.pattern },
+            ]}
+            value={typeFilter}
+            onChange={(value) => setTypeFilter(value as FilterType)}
+          />
         </div>
 
-        {/* Category Filters */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-2">
-          {(['all', 'habits', 'routines', 'goals', 'overall'] as CategoryFilter[]).map(category => (
-            <button
-              key={category}
-              onClick={() => setCategoryFilter(category)}
-              className={`px-4 py-2 rounded-lg whitespace-nowrap transition-colors ${
-                categoryFilter === category
-                  ? 'bg-accent-secondary text-bg-primary'
-                  : 'bg-bg-secondary text-text-secondary hover:text-text-primary'
-              }`}
-            >
-              {category.charAt(0).toUpperCase() + category.slice(1)}
-              <span className="ml-2 text-xs opacity-75">
-                ({category === 'all' ? categoryCounts.all : categoryCounts[category]})
-              </span>
-            </button>
-          ))}
+        {/* Category Filter */}
+        <div className="mb-6">
+          <MobileFilterSelect
+            label="Category"
+            options={[
+              { id: 'all', label: 'All Categories', count: categoryCounts.all },
+              { id: 'habits', label: 'Habits', count: categoryCounts.habits },
+              { id: 'routines', label: 'Routines', count: categoryCounts.routines },
+              { id: 'goals', label: 'Goals', count: categoryCounts.goals },
+              { id: 'overall', label: 'Overall', count: categoryCounts.overall },
+            ]}
+            value={categoryFilter}
+            onChange={(value) => setCategoryFilter(value as CategoryFilter)}
+            showAsButtons={true}
+          />
         </div>
 
         {/* Insights Grid */}

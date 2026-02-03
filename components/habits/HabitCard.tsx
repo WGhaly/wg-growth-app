@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Trash2, Target, TrendingUp, TrendingDown, MoreVertical, Plus, CheckCircle } from 'lucide-react';
 import { Card, CardHeader, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { SwipeActions } from '@/components/ui/SwipeActions';
 import { deleteHabit, logHabit } from '@/actions/habits';
 import { Input } from '@/components/ui/Input';
 import { Textarea } from '@/components/ui/Textarea';
@@ -91,72 +92,78 @@ export default function HabitCard({ habit }: HabitCardProps) {
 
   return (
     <>
-      <Card className="relative group hover:border-accent transition-colors">
-        <CardHeader>
-          {/* Header with Type Badge */}
-          <div className="flex items-start justify-between gap-2">
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-2">
-                <div className={`px-2 py-1 rounded text-xs font-medium border ${getTypeStyles()}`}>
-                  {habit.type === 'good' ? (
-                    <>
-                      <TrendingUp size={12} className="inline mr-1" />
-                      Build
-                    </>
-                  ) : (
-                    <>
-                      <TrendingDown size={12} className="inline mr-1" />
-                      Break
-                    </>
+      <SwipeActions
+        leftActions={[
+          {
+            icon: <Plus size={20} />,
+            label: 'Log',
+            color: 'green' as const,
+            onClick: () => setShowLogModal(true),
+          },
+        ]}
+        rightActions={[
+          {
+            icon: <Trash2 size={20} />,
+            label: 'Delete',
+            color: 'red' as const,
+            onClick: () => setShowDeleteConfirm(true),
+          },
+        ]}
+        className="rounded-lg overflow-hidden"
+      >
+        <Card className="relative group hover:border-accent transition-colors">
+          <CardHeader>
+            {/* Header with Type Badge */}
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className={`px-2 py-1 rounded text-xs font-medium border ${getTypeStyles()}`}>
+                    {habit.type === 'good' ? (
+                      <>
+                        <TrendingUp size={12} className="inline mr-1" />
+                        Build
+                      </>
+                    ) : (
+                      <>
+                        <TrendingDown size={12} className="inline mr-1" />
+                        Break
+                      </>
+                    )}
+                  </div>
+                  {habit.hasLoggedToday && (
+                    <div className="px-2 py-1 rounded text-xs font-medium bg-accent/10 text-accent border border-accent/20">
+                      <CheckCircle size={12} className="inline mr-1" />
+                      Logged Today
+                    </div>
                   )}
                 </div>
-                {habit.hasLoggedToday && (
-                  <div className="px-2 py-1 rounded text-xs font-medium bg-accent/10 text-accent border border-accent/20">
-                    <CheckCircle size={12} className="inline mr-1" />
-                    Logged Today
-                  </div>
+                <h3 className="text-lg font-semibold">{habit.name}</h3>
+                {habit.description && (
+                  <p className="text-sm text-text-secondary mt-1 line-clamp-2">
+                    {habit.description}
+                  </p>
                 )}
               </div>
-              <h3 className="text-lg font-semibold">{habit.name}</h3>
-              {habit.description && (
-                <p className="text-sm text-text-secondary mt-1 line-clamp-2">
-                  {habit.description}
-                </p>
-              )}
-            </div>
 
-            {/* Actions Menu */}
-            <div className="relative">
-              <button
-                onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="p-1 hover:bg-bg-tertiary rounded opacity-0 group-hover:opacity-100 transition-opacity"
-              >
-                <MoreVertical size={18} />
-              </button>
-
-              {isMenuOpen && (
-                <>
-                  <div
-                    className="fixed inset-0 z-10"
-                    onClick={() => setIsMenuOpen(false)}
-                  />
-                  <div className="absolute right-0 top-8 z-20 bg-bg-secondary border border-border-default rounded-lg shadow-lg py-1 min-w-[150px]">
-                    <button
-                      onClick={() => {
-                        setShowDeleteConfirm(true);
-                        setIsMenuOpen(false);
-                      }}
-                      className="w-full px-4 py-2 text-left text-sm hover:bg-bg-tertiary flex items-center gap-2 text-red-400"
-                    >
-                      <Trash2 size={16} />
-                      Delete
-                    </button>
-                  </div>
-                </>
-              )}
+              {/* Desktop Actions - Hidden on Mobile */}
+              <div className="hidden md:flex items-center gap-1">
+                <button
+                  onClick={() => setShowLogModal(true)}
+                  className="p-2 hover:bg-green-500/10 rounded text-green-400 transition-colors"
+                  title="Log habit"
+                >
+                  <Plus size={18} />
+                </button>
+                <button
+                  onClick={() => setShowDeleteConfirm(true)}
+                  className="p-2 hover:bg-red-500/10 rounded text-red-400 transition-colors"
+                  title="Delete habit"
+                >
+                  <Trash2 size={18} />
+                </button>
+              </div>
             </div>
-          </div>
-        </CardHeader>
+          </CardHeader>
 
         <CardContent className="space-y-4">
           {/* Stats */}
@@ -186,7 +193,8 @@ export default function HabitCard({ habit }: HabitCardProps) {
             onClick={() => setShowLogModal(true)}
             variant="secondary"
             className="w-full"
-            disabled={habit.hasLoggedToday}
+            d
+      </SwipeActions>isabled={habit.hasLoggedToday}
           >
             <Plus size={18} className="mr-2" />
             {habit.hasLoggedToday ? 'Already Logged Today' : 'Log Today'}

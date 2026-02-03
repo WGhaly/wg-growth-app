@@ -3,6 +3,8 @@
 import { useState } from 'react'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
+import { MobileFilterSelect } from '@/components/ui/MobileFilterSelect'
+import { FloatingActionButton } from '@/components/ui/FloatingActionButton'
 import { CreateRoutineModal } from '@/components/routines/CreateRoutineModal'
 import { RoutineCard } from '@/components/routines/RoutineCard'
 import { Clock, Plus } from 'lucide-react'
@@ -43,47 +45,33 @@ export function RoutinesClient({ initialRoutines }: RoutinesClientProps) {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 py-8 pb-24">
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-3xl font-bold mb-2">Routines</h1>
           <p className="text-text-tertiary">Build and track your daily, weekly, and monthly routines</p>
         </div>
-        <Button onClick={() => setIsCreateModalOpen(true)}>
+        <Button onClick={() => setIsCreateModalOpen(true)} className="hidden md:flex">
           <Plus className="w-4 h-4 mr-2" />
           New Routine
         </Button>
       </div>
 
       {/* Type Filter */}
-      <div className="flex items-center gap-2 mb-6 overflow-x-auto pb-2">
-        {[
-          { id: 'all', name: 'All Routines' },
-          { id: 'daily', name: 'Daily' },
-          { id: 'weekly', name: 'Weekly' },
-          { id: 'monthly', name: 'Monthly' },
-        ].map((type) => {
-          const isActive = selectedType === type.id
-          return (
-            <button
-              key={type.id}
-              onClick={() => setSelectedType(type.id as any)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors whitespace-nowrap ${
-                isActive
-                  ? 'bg-[#ccab52]/10 border-[#ccab52] text-[#ccab52]'
-                  : 'bg-white/5 border-white/10 text-text-tertiary hover:bg-white/10'
-              }`}
-            >
-              <span className="text-sm font-medium">{type.name}</span>
-              <span className={`text-xs px-2 py-0.5 rounded-full ${
-                isActive ? 'bg-[#ccab52]/20' : 'bg-white/10'
-              }`}>
-                {counts[type.id as keyof typeof counts]}
-              </span>
-            </button>
-          )
-        })}
+      <div className="mb-6">
+        <MobileFilterSelect
+          label="Routine Type"
+          options={[
+            { id: 'all', label: 'All Routines', count: counts.all },
+            { id: 'daily', label: 'Daily', count: counts.daily },
+            { id: 'weekly', label: 'Weekly', count: counts.weekly },
+            { id: 'monthly', label: 'Monthly', count: counts.monthly },
+          ]}
+          value={selectedType}
+          onChange={(value) => setSelectedType(value as any)}
+          showAsButtons={true}
+        />
       </div>
 
       {/* Routines Grid */}
@@ -117,6 +105,14 @@ export function RoutinesClient({ initialRoutines }: RoutinesClientProps) {
         onClose={() => setIsCreateModalOpen(false)}
         defaultType={selectedType !== 'all' ? selectedType : undefined}
       />
+
+      {/* Floating Action Button for Mobile */}
+      <div className="md:hidden">
+        <FloatingActionButton
+          onClick={() => setIsCreateModalOpen(true)}
+          icon={<Clock size={24} />}
+        />
+      </div>
     </div>
   )
 }

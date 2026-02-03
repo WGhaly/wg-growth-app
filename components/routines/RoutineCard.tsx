@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
+import { SwipeActions } from '@/components/ui/SwipeActions'
 import { logRoutineCompletion, deleteRoutine } from '@/actions/routines'
 import { Clock, CheckCircle, MinusCircle, Trash2, MoreVertical, Target } from 'lucide-react'
 
@@ -67,51 +68,65 @@ export function RoutineCard({ routine }: RoutineCardProps) {
 
   return (
     <>
-      <Card className="p-4 hover:border-[#ccab52]/30 transition-colors relative">
-        {/* Header */}
-        <div className="flex items-start justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <Clock className="w-5 h-5 text-[#ccab52]" />
-            <div>
-              <h3 className="font-semibold text-lg">{routine.name}</h3>
-              <div className="flex items-center gap-2 mt-1">
-                <span className={`text-xs font-medium px-2 py-1 rounded ${typeColors[routine.type]}`}>
-                  {routine.type.charAt(0).toUpperCase() + routine.type.slice(1)}
-                </span>
-                {routine.targetTime && (
-                  <span className="text-xs text-text-tertiary">
-                    @ {routine.targetTime}
+      <SwipeActions
+        leftActions={[
+          {
+            icon: <CheckCircle size={20} />,
+            label: 'Complete',
+            color: 'green' as const,
+            onClick: () => setShowCompletionModal(true),
+          },
+        ]}
+        rightActions={[
+          {
+            icon: <Trash2 size={20} />,
+            label: 'Delete',
+            color: 'red' as const,
+            onClick: handleDelete,
+          },
+        ]}
+        className="rounded-lg overflow-hidden"
+      >
+        <Card className="p-4 hover:border-[#ccab52]/30 transition-colors relative">
+          {/* Header */}
+          <div className="flex items-start justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Clock className="w-5 h-5 text-[#ccab52]" />
+              <div>
+                <h3 className="font-semibold text-lg">{routine.name}</h3>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className={`text-xs font-medium px-2 py-1 rounded ${typeColors[routine.type]}`}>
+                    {routine.type.charAt(0).toUpperCase() + routine.type.slice(1)}
                   </span>
-                )}
-              </div>
-            </div>
-          </div>
-          
-          {/* Actions Menu */}
-          <div className="relative">
-            <button
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="p-1 hover:bg-white/5 rounded transition-colors"
-              disabled={isLoading}
-            >
-              <MoreVertical className="w-4 h-4" />
-            </button>
-            
-            {isMenuOpen && (
-              <div className="absolute right-0 mt-2 w-48 bg-[#1a1a1a] border border-white/10 rounded-lg shadow-lg z-10">
-                <div className="py-1">
-                  <button
-                    onClick={handleDelete}
-                    className="w-full px-4 py-2 text-left text-sm text-red-400 hover:bg-red-500/10 flex items-center gap-2"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                    Delete Routine
-                  </button>
+                  {routine.targetTime && (
+                    <span className="text-xs text-text-tertiary">
+                      @ {routine.targetTime}
+                    </span>
+                  )}
                 </div>
               </div>
-            )}
+            </div>
+            
+            {/* Desktop Actions */}
+            <div className="hidden md:flex items-center gap-1">
+              <button
+                onClick={() => setShowCompletionModal(true)}
+                disabled={isLoading}
+                className="p-2 hover:bg-green-500/10 rounded text-green-400 transition-colors disabled:opacity-50"
+                title="Mark complete"
+              >
+                <CheckCircle className="w-4 h-4" />
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={isLoading}
+                className="p-2 hover:bg-red-500/10 rounded text-red-400 transition-colors disabled:opacity-50"
+                title="Delete routine"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
           </div>
-        </div>
 
         {/* Duration Info */}
         {(routine.minimumDuration || routine.idealDuration) && (
@@ -143,7 +158,8 @@ export function RoutineCard({ routine }: RoutineCardProps) {
             {routine.items.length > 3 && (
               <div className="text-xs text-text-secondary">
                 +{routine.items.length - 3} more steps
-              </div>
+             
+      </SwipeActions> </div>
             )}
           </div>
         )}

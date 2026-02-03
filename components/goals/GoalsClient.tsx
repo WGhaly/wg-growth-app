@@ -3,6 +3,9 @@
 import { useState } from 'react'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
+import { FloatingActionButton } from '@/components/ui/FloatingActionButton'
+import { SwipeHint } from '@/components/ui/SwipeHint'
+import { MobileFilterSelect } from '@/components/ui/MobileFilterSelect'
 import { CreateGoalModal } from '@/components/goals/CreateGoalModal'
 import { GoalCard } from '@/components/goals/GoalCard'
 import { 
@@ -12,8 +15,7 @@ import {
   Activity, 
   DollarSign, 
   Briefcase, 
-  Users,
-  Filter 
+  Users
 } from 'lucide-react'
 
 interface Goal {
@@ -73,67 +75,46 @@ export function GoalsClient({ initialGoals }: GoalsClientProps) {
   }, {} as Record<string, number>)
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 py-8 pb-24">
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-3xl font-bold mb-2">Goals</h1>
           <p className="text-text-tertiary">Set and track your life goals across all categories</p>
         </div>
-        <Button onClick={() => setIsCreateModalOpen(true)}>
+        <Button onClick={() => setIsCreateModalOpen(true)} className="hidden md:flex">
           <Target className="w-4 h-4 mr-2" />
           New Goal
         </Button>
       </div>
 
       {/* Category Filter */}
-      <div className="flex items-center gap-2 mb-6 overflow-x-auto pb-2">
-        {categories.map((category) => {
-          const Icon = category.icon
-          const isActive = selectedCategory === category.id
-          return (
-            <button
-              key={category.id}
-              onClick={() => setSelectedCategory(category.id)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors whitespace-nowrap ${
-                isActive
-                  ? 'bg-[#ccab52]/10 border-[#ccab52] text-[#ccab52]'
-                  : 'bg-white/5 border-white/10 text-text-tertiary hover:bg-white/10'
-              }`}
-            >
-              <Icon className="w-4 h-4" />
-              <span className="text-sm font-medium">{category.name}</span>
-              <span className={`text-xs px-2 py-0.5 rounded-full ${
-                isActive ? 'bg-[#ccab52]/20' : 'bg-white/10'
-              }`}>
-                {categoryCounts[category.id] || 0}
-              </span>
-            </button>
-          )
-        })}
+      <div className="mb-6">
+        <MobileFilterSelect
+          label="Category"
+          options={categories.map(cat => ({
+            id: cat.id,
+            label: cat.name,
+            count: categoryCounts[cat.id] || 0,
+            icon: <cat.icon className="w-4 h-4" />,
+          }))}
+          value={selectedCategory}
+          onChange={setSelectedCategory}
+        />
       </div>
 
       {/* Status Filter */}
-      <div className="flex items-center gap-4 mb-6">
-        <div className="flex items-center gap-2 text-sm text-text-tertiary">
-          <Filter className="w-4 h-4" />
-          <span>Status:</span>
-        </div>
-        <div className="flex items-center gap-2">
-          {statusFilters.map((status) => (
-            <button
-              key={status.id}
-              onClick={() => setSelectedStatus(status.id)}
-              className={`px-3 py-1 rounded-lg text-sm transition-colors ${
-                selectedStatus === status.id
-                  ? 'bg-[#ccab52]/10 text-[#ccab52] border border-[#ccab52]'
-                  : 'bg-white/5 text-text-tertiary hover:bg-white/10'
-              }`}
-            >
-              {status.name}
-            </button>
-          ))}
-        </div>
+      <div className="mb-6">
+        <MobileFilterSelect
+          label="Status"
+          options={statusFilters.map(status => ({
+            id: status.id,
+            label: status.name,
+          }))}
+          value={selectedStatus}
+          onChange={setSelectedStatus}
+          showAsButtons={true}
+        />
       </div>
 
       {/* Goals Grid */}
@@ -167,6 +148,17 @@ export function GoalsClient({ initialGoals }: GoalsClientProps) {
         onClose={() => setIsCreateModalOpen(false)}
         defaultCategory={selectedCategory !== 'all' ? selectedCategory as any : undefined}
       />
+
+      {/* Floating Action Button for Mobile */}
+      <div className="md:hidden">
+        <FloatingActionButton
+          onClick={() => setIsCreateModalOpen(true)}
+          icon={<Target size={24} />}
+        />
+      </div>
+
+      {/* Swipe Hint for First-Time Users */}
+      {filteredGoals.length > 0 && <SwipeHint storageKey="goals-swipe-hint" />}
     </div>
   )
 }

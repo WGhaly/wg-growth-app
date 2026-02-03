@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Card, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { MobileFilterSelect } from '@/components/ui/MobileFilterSelect';
 import { Plus, Users, Heart, Building2, UserCheck } from 'lucide-react';
 import { PersonCard } from './PersonCard';
 import { CreatePersonModal } from './CreatePersonModal';
@@ -83,31 +84,19 @@ export function RelationshipsClient({ initialPeople }: RelationshipsClientProps)
           </Button>
         </div>
 
-        {/* Circle Filter Tabs */}
-        <div className="flex gap-2 overflow-x-auto pb-2">
-          {circleOptions.map(({ value, label, icon: Icon }) => (
-            <button
-              key={value}
-              onClick={() => setSelectedCircle(value)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg whitespace-nowrap transition-colors ${
-                selectedCircle === value
-                  ? 'bg-accent-primary text-bg-primary'
-                  : 'bg-bg-secondary text-text-secondary hover:text-text-primary'
-              }`}
-            >
-              <Icon size={16} />
-              {label}
-              <span
-                className={`ml-1 px-2 py-0.5 rounded-full text-xs ${
-                  selectedCircle === value
-                    ? 'bg-bg-primary/20 text-bg-primary'
-                    : 'bg-bg-primary text-text-tertiary'
-                }`}
-              >
-                {counts[value]}
-              </span>
-            </button>
-          ))}
+        {/* Circle Filter */}
+        <div className="mb-6">
+          <MobileFilterSelect
+            label="Relationship Circle"
+            options={circleOptions.map(opt => ({
+              id: opt.value,
+              label: opt.label,
+              count: counts[opt.value],
+              icon: <opt.icon size={16} />,
+            }))}
+            value={selectedCircle}
+            onChange={(value) => setSelectedCircle(value as Circle)}
+          />
         </div>
 
         {/* Stats Cards */}

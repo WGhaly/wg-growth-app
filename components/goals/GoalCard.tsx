@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Card } from '@/components/ui/Card'
+import { SwipeActions } from '@/components/ui/SwipeActions'
 import { updateGoalStatus, deleteGoal } from '@/actions/goals'
 import { 
   Target, 
@@ -98,71 +99,93 @@ export function GoalCard({ goal }: GoalCardProps) {
     }
   }
 
+  // Define swipe actions based on goal status
+  const getSwipeActions = () => {
+    const actions = {
+      left: [] as any[],
+      right: [] as any[],
+    };
+
+    // Left swipe actions (status changes)
+    if (goal.status !== 'completed') {
+      actions.left.push({
+        icon: <CheckCircle2 size={20} />,
+        label: 'Complete',
+        color: 'green' as const,
+        onClick: () => handleStatusChange('completed'),
+      });
+    }
+
+    if (goal.status !== 'in_progress' && goal.status !== 'completed') {
+      actions.left.push({
+        icon: <Play size={20} />,
+        label: 'Start',
+        color: 'blue' as const,
+        onClick: () => handleStatusChange('in_progress'),
+      });
+    }
+
+    // Right swipe action (delete)
+    actions.right.push({
+      icon: <Trash2 size={20} />,
+      label: 'Delete',
+      color: 'red' as const,
+      onClick: handleDelete,
+    });
+
+    return actions;
+  };
+
+  const swipeActions = getSwipeActions();
+
   return (
-    <Card className="p-4 hover:border-[#ccab52]/30 transition-colors relative">
-      {/* Header */}
-      <div className="flex items-start justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <Target className="w-5 h-5 text-[#ccab52]" />
-          <span className="text-xs font-medium text-[#ccab52] uppercase">
-            {goal.category}
-          </span>
-        </div>
-        
-        {/* Actions Menu */}
-        <div className="relative">
-          <button
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="p-1 hover:bg-white/5 rounded transition-colors"
-            disabled={isLoading}
-          >
-            <MoreVertical className="w-4 h-4" />
-          </button>
+    <SwipeActions
+      leftActions={swipeActions.left}
+      rightActions={swipeActions.right}
+      className="rounded-lg overflow-hidden"
+    >
+      <Card className="p-4 hover:border-[#ccab52]/30 transition-colors relative">
+        {/* Header */}
+        <div className="flex items-start justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <Target className="w-5 h-5 text-[#ccab52]" />
+            <span className="text-xs font-medium text-[#ccab52] uppercase">
+              {goal.category}
+            </span>
+          </div>
           
-          {isMenuOpen && (
-            <div className="absolute right-0 mt-2 w-48 bg-[#1a1a1a] border border-white/10 rounded-lg shadow-lg z-10">
-              <div className="py-1">
-                <button
-                  onClick={() => handleStatusChange('not_started')}
-                  disabled={goal.status === 'not_started'}
-                  className="w-full px-4 py-2 text-left text-sm hover:bg-white/5 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Mark Not Started
-                </button>
-                <button
-                  onClick={() => handleStatusChange('in_progress')}
-                  disabled={goal.status === 'in_progress'}
-                  className="w-full px-4 py-2 text-left text-sm hover:bg-white/5 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Mark In Progress
-                </button>
-                <button
-                  onClick={() => handleStatusChange('completed')}
-                  disabled={goal.status === 'completed'}
-                  className="w-full px-4 py-2 text-left text-sm hover:bg-white/5 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Mark Completed
-                </button>
-                <button
-                  onClick={() => handleStatusChange('abandoned')}
-                  disabled={goal.status === 'abandoned'}
-                  className="w-full px-4 py-2 text-left text-sm hover:bg-white/5 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Mark Abandoned
-                </button>
-                <div className="border-t border-white/10 my-1"></div>
-                <button
-                  onClick={handleDelete}
-                  className="w-full px-4 py-2 text-left text-sm text-red-400 hover:bg-red-500/10 flex items-center gap-2"
-                >
-                  <Trash2 className="w-4 h-4" />
-                  Delete Goal
-                </button>
-              </div>
-            </div>
-          )}
+          {/* Quick Status Actions - Visible on Desktop */}
+          <div className="hidden md:flex items-center gap-2">
+            {goal.status !== 'completed' && (
+              <button
+                onClick={() => handleStatusChange('completed')}
+                disabled={isLoading}
+                className="p-2 hover:bg-green-500/10 rounded text-green-400 transition-colors disabled:opacity-50"
+                title="Mark as completed"
+              >
+                <CheckCircle2 className="w-4 h-4" />
+              </button>
+            )}
+            {goal.status !== 'in_progress' && goal.status !== 'completed' && (
+              <button
+                onClick={() => handleStatusChange('in_progress')}
+                disabled={isLoading}
+                className="p-2 hover:bg-blue-500/10 rounded text-blue-400 transition-colors disabled:opacity-50"
+                title="Mark as in progress"
+              >
+                <Play className="w-4 h-4" />
+              </button>
+            )}
+            <button
+              onClick={handleDelete}
+              disabled={isLoading}
+              className="p-2 hover:bg-red-500/10 rounded text-red-400 transition-colors disabled:opacity-50"
+              title="Delete goal"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </div>
         </div>
-      </div>
 
       {/* Title */}
       <h3 className="font-semibold text-lg mb-2">{goal.title}</h3>
@@ -184,7 +207,8 @@ export function GoalCard({ goal }: GoalCardProps) {
           </div>
         </div>
 
-        {/* Time Horizon & Target Date */}
+      </Card>
+    </SwipeActions* Time Horizon & Target Date */}
         <div className="flex items-center gap-4 text-xs text-text-tertiary">
           <div className="flex items-center gap-1">
             <Clock className="w-3 h-3" />

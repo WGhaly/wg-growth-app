@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Plus, TrendingUp, TrendingDown } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { FloatingActionButton } from '@/components/ui/FloatingActionButton';
 import HabitCard from './HabitCard';
 import CreateHabitModal from './CreateHabitModal';
 
@@ -41,7 +42,7 @@ export default function HabitsClient({ initialHabits }: HabitsClientProps) {
   };
 
   return (
-    <div className="min-h-screen bg-bg-primary p-6">
+    <div className="min-h-screen bg-bg-primary p-6 pb-24">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -49,7 +50,7 @@ export default function HabitsClient({ initialHabits }: HabitsClientProps) {
             <h1 className="text-3xl font-bold">Habits</h1>
             <p className="text-text-secondary mt-1">Track and build positive habits, break negative ones</p>
           </div>
-          <Button onClick={() => setIsCreateModalOpen(true)}>
+          <Button onClick={() => setIsCreateModalOpen(true)} className="hidden md:flex">
             <Plus size={18} className="mr-2" />
             New Habit
           </Button>
@@ -120,6 +121,14 @@ export default function HabitsClient({ initialHabits }: HabitsClientProps) {
         onClose={() => setIsCreateModalOpen(false)}
         defaultType={selectedType === 'all' ? 'good' : selectedType}
       />
+
+      {/* Floating Action Button for Mobile */}
+      <div className="md:hidden">
+        <FloatingActionButton
+          onClick={() => setIsCreateModalOpen(true)}
+          icon={<Plus size={24} />}
+        />
+      </div>
     </div>
   );
 }
