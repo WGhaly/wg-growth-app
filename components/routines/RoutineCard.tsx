@@ -158,8 +158,7 @@ export function RoutineCard({ routine }: RoutineCardProps) {
             {routine.items.length > 3 && (
               <div className="text-xs text-text-secondary">
                 +{routine.items.length - 3} more steps
-             
-      </SwipeActions> </div>
+              </div>
             )}
           </div>
         )}
@@ -174,6 +173,7 @@ export function RoutineCard({ routine }: RoutineCardProps) {
           Mark Complete
         </Button>
       </Card>
+      </SwipeActions>
 
       {/* Completion Modal */}
       {showCompletionModal && (
