@@ -8,6 +8,7 @@ import { Plus, Users, Heart, Building2, UserCheck } from 'lucide-react';
 import { PersonCard } from './PersonCard';
 import { CreatePersonModal } from './CreatePersonModal';
 import { InteractionsList } from './InteractionsList';
+import { ContactsImportButton } from './ContactsImportButton';
 
 type Circle = 'all' | 'inner' | 'middle' | 'outer' | 'distant';
 
@@ -73,15 +74,22 @@ export function RelationshipsClient({ initialPeople }: RelationshipsClientProps)
     <div className="min-h-screen bg-bg-primary p-6">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold">Relationships</h1>
-            <p className="text-text-secondary mt-1">Track meaningful connections and interactions</p>
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold">Relationships</h1>
+              <p className="text-text-secondary mt-1">Track meaningful connections and interactions</p>
+            </div>
+            <Button onClick={() => setShowCreateModal(true)}>
+              <Plus size={18} className="mr-2" />
+              Add Person
+            </Button>
           </div>
-          <Button onClick={() => setShowCreateModal(true)}>
-            <Plus size={18} className="mr-2" />
-            Add Person
-          </Button>
+          
+          {/* Contacts Import */}
+          <div className="max-w-sm">
+            <ContactsImportButton />
+          </div>
         </div>
 
         {/* Circle Filter */}

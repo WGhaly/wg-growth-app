@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
+import { useSession, signIn } from 'next-auth/react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Alert } from '@/components/ui/Alert';
@@ -72,8 +72,21 @@ export default function AutoBiometricLoginPage() {
       const result = await verifyResponse.json();
 
       if (result.verified) {
-        // Success - redirect to dashboard
-        router.push('/dashboard');
+        // Success - now sign in with NextAuth using biometric flag
+        console.log('[Biometric Auth] Verification successful, creating session...');
+        
+        const signInResult = await signIn('credentials', {
+          email,
+          biometricVerified: 'true',
+          redirect: false
+        });
+
+        if (signInResult?.ok) {
+          console.log('[Biometric Auth] Session created, redirecting to dashboard');
+          router.push('/dashboard');
+        } else {
+          throw new Error('Failed to create session');
+        }
       } else {
         throw new Error('Authentication verification failed');
       }

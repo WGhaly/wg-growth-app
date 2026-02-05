@@ -17,17 +17,18 @@ function getWebPush() {
     // Only initialize if VAPID keys are configured
     if (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
       try {
-        // NOTE: web-push is disabled temporarily due to port 443 connection issues
-        // webpush = require('web-push');
-        // webpush.setVapidDetails(
-        //   process.env.VAPID_SUBJECT || 'mailto:your-email@example.com',
-        //   process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
-        //   process.env.VAPID_PRIVATE_KEY
-        // );
-        console.warn('Web push is currently disabled');
+        webpush = require('web-push');
+        webpush.setVapidDetails(
+          process.env.VAPID_SUBJECT || 'mailto:your-email@example.com',
+          process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
+          process.env.VAPID_PRIVATE_KEY
+        );
+        console.log('Web push initialized successfully');
       } catch (error) {
-        console.warn('Web push not configured:', error);
+        console.warn('Web push initialization failed:', error);
       }
+    } else {
+      console.warn('Web push VAPID keys not configured');
     }
   }
   
@@ -258,7 +259,7 @@ export async function sendPushNotification(
 
 // Get VAPID public key for client
 export async function getVapidPublicKey() {
-  const publicKey = process.env.VAPID_PUBLIC_KEY;
+  const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
   if (!publicKey) {
     return { success: false, error: 'VAPID keys not configured' };
   }
