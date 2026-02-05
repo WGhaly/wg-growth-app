@@ -251,10 +251,10 @@ export function useWebAuthn() {
       }
 
       // Sign in with NextAuth using biometric verification
-      console.log('[useWebAuthn] Creating NextAuth session...');
+      console.log('[useWebAuthn] Creating NextAuth session with email:', result.email);
       const { signIn } = await import('next-auth/react');
       const signInResult = await signIn('credentials', {
-        email: result.user?.email, // Email from verification result
+        email: result.email, // Email from verification result (not result.user.email!)
         biometricVerified: 'true',
         redirect: false
       });
