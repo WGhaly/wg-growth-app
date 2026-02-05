@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Alert } from '@/components/ui/Alert';
 import { UserPlus, AlertCircle } from 'lucide-react';
@@ -15,7 +15,16 @@ interface Contact {
 export function ContactsImportButton() {
   const [isImporting, setIsImporting] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-  const [isSupported, setIsSupported] = useState(true);
+  const [isSupported, setIsSupported] = useState(false);
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    // Only check support on client-side
+    setIsClient(true);
+    if (typeof window !== 'undefined' && 'contacts' in navigator && 'ContactsManager' in window) {
+      setIsSupported(true);
+    }
+  }, []);
 
   const handleImportContacts = async () => {
     // Check if Contact Picker API is supported
@@ -117,6 +126,22 @@ export function ContactsImportButton() {
       setIsImporting(false);
     }
   };
+
+  // Don't render until client-side hydration is complete
+  if (!isClient) {
+    return (
+      <div className="space-y-3">
+        <Button
+          disabled
+          variant="secondary"
+          fullWidth
+        >
+          <UserPlus size={18} className="mr-2" />
+          Loading...
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-3">

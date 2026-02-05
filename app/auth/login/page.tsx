@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
@@ -21,7 +21,7 @@ export default function LoginPage() {
   const { authenticateWithCredential, isLoading: isBiometricLoading } = useWebAuthn();
 
   // Check for stored biometric email and standalone mode
-  useState(() => {
+  useEffect(() => {
     if (typeof window !== 'undefined') {
       const storedEmail = localStorage.getItem('biometric_email');
       if (storedEmail) {
@@ -33,7 +33,7 @@ export default function LoginPage() {
                         (window.navigator as any).standalone === true;
       setIsStandalone(standalone);
     }
-  });
+  }, []);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
