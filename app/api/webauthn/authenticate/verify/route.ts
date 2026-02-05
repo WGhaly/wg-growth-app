@@ -22,10 +22,9 @@ export async function POST(req: NextRequest) {
     if (!body.email && body.response.response.userHandle) {
       console.log('[WebAuthn Auth Verify] Passwordless flow - using userHandle');
       
-      // Decode userHandle (base64url) to get user ID
-      const userHandle = body.response.response.userHandle;
-      const userId = Buffer.from(userHandle, 'base64url').toString('utf-8');
-      console.log('[WebAuthn Auth Verify] Decoded user ID:', userId);
+      // userHandle is already decoded by @simplewebauthn/browser
+      const userId = body.response.response.userHandle;
+      console.log('[WebAuthn Auth Verify] User ID from userHandle:', userId);
       
       // Get user by ID
       const [foundUser] = await db
