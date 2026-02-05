@@ -66,25 +66,37 @@ export default function LoginPage() {
   }
 
   async function handleBiometricLogin() {
-    // Get stored email if not already set
-    let emailToUse = email;
-    if (!emailToUse) {
-      const storedEmail = localStorage.getItem('biometric_email');
-      if (storedEmail) {
-        emailToUse = storedEmail;
-        setEmail(storedEmail);
-      } else {
-        setError('Please enter your email first or set up biometrics');
-        return;
+    console.log('[Login] Biometric button clicked');
+    console.log('[Login] Email:', email);
+    console.log('[Login] Has biometric email:', hasBiometricEmail);
+    
+    try {
+      // Get stored email if not already set
+      let emailToUse = email;
+      if (!emailToUse) {
+        const storedEmail = localStorage.getItem('biometric_email');
+        console.log('[Login] Retrieved stored email:', storedEmail);
+        if (storedEmail) {
+          emailToUse = storedEmail;
+          setEmail(storedEmail);
+        } else {
+          setError('Please enter your email first or set up biometrics');
+          return;
+        }
       }
-    }
 
-    const success = await authenticateWithCredential(emailToUse);
+      console.log('[Login] Calling authenticateWithCredential with:', emailToUse);
+      const success = await authenticateWithCredential(emailToUse);
+      console.log('[Login] Authentication result:', success);
 
-    if (success) {
-      router.push('/dashboard');
-    } else {
-      setError('Biometric authentication failed');
+      if (success) {
+        router.push('/dashboard');
+      } else {
+        setError('Biometric authentication failed');
+      }
+    } catch (err) {
+      console.error('[Login] Biometric login error:', err);
+      setError('Biometric authentication failed: ' + (err instanceof Error ? err.message : 'Unknown error'));
     }
   }
 
@@ -136,28 +148,28 @@ export default function LoginPage() {
             <Button type="submit" fullWidth isLoading={isLoading}>
               Sign In
             </Button>
-
-            <div className="relative my-6">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-border-default"></div>
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-bg-secondary text-text-tertiary">Or</span>
-              </div>
-            </div>
-
-            <Button
-              type="button"
-              variant="secondary"
-              fullWidth
-              onClick={handleBiometricLogin}
-              isLoading={isBiometricLoading}
-              disabled={!email && !hasBiometricEmail}
-            >
-              <Fingerprint size={18} className="mr-2" />
-              Sign in with Biometric
-            </Button>
           </form>
+
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-border-default"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-bg-secondary text-text-tertiary">Or</span>
+            </div>
+          </div>
+
+          <Button
+            type="button"
+            variant="secondary"
+            fullWidth
+            onClick={handleBiometricLogin}
+            isLoading={isBiometricLoading}
+            disabled={!email && !hasBiometricEmail}
+          >
+            <Fingerprint size={18} className="mr-2" />
+            Sign in with Biometric
+          </Button>
         </CardContent>
 
         <CardFooter className="flex-col gap-4">

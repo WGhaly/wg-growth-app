@@ -115,10 +115,12 @@ export function useWebAuthn() {
 
   // Authenticate with existing credential (biometric login)
   const authenticateWithCredential = async (email: string): Promise<boolean> => {
+    console.log('[useWebAuthn] Starting authentication for:', email);
     setIsLoading(true);
     setError(null);
 
     try {
+      console.log('[useWebAuthn] Fetching authentication options...');
       // Get authentication options from server
       const optionsResponse = await fetch('/api/webauthn/authenticate/options', {
         method: 'POST',
@@ -126,16 +128,22 @@ export function useWebAuthn() {
         body: JSON.stringify({ email })
       });
 
+      console.log('[useWebAuthn] Options response status:', optionsResponse.status);
       if (!optionsResponse.ok) {
+        const errorText = await optionsResponse.text();
+        console.error('[useWebAuthn] Options response error:', errorText);
         throw new Error('Failed to get authentication options');
       }
 
       const options = await optionsResponse.json();
+      console.log('[useWebAuthn] Got options, starting browser authentication...');
 
       // Start authentication with browser
       const authenticationResponse: AuthenticationResponseJSON = await startAuthentication(options);
+      console.log('[useWebAuthn] Browser authentication complete');
 
       // Verify authentication with server
+      console.log('[useWebAuthn] Verifying with server...');
       const verifyResponse = await fetch('/api/webauthn/authenticate/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -145,17 +153,22 @@ export function useWebAuthn() {
         })
       });
 
+      console.log('[useWebAuthn] Verify response status:', verifyResponse.status);
       if (!verifyResponse.ok) {
+        const errorText = await verifyResponse.text();
+        console.error('[useWebAuthn] Verify response error:', errorText);
         throw new Error('Authentication verification failed');
       }
 
       const result = await verifyResponse.json();
+      console.log('[useWebAuthn] Verification result:', result);
 
       if (!result.verified) {
         throw new Error('Authentication verification failed');
       }
 
       // Sign in with NextAuth using biometric verification
+      console.log('[useWebAuthn] Creating NextAuth session...');
       const { signIn } = await import('next-auth/react');
       const signInResult = await signIn('credentials', {
         email,
@@ -163,15 +176,17 @@ export function useWebAuthn() {
         redirect: false
       });
 
+      console.log('[useWebAuthn] SignIn result:', signInResult);
       if (signInResult?.error) {
-        throw new Error('Failed to create session');
+        throw new Error('Failed to create session: ' + signInResult.error);
       }
 
       setIsLoading(false);
+      console.log('[useWebAuthn] Authentication successful!');
       
       return true;
     } catch (err: any) {
-      console.error('WebAuthn authentication error:', err);
+      console.error('[useWebAuthn] Authentication error:', err);
       
       // Log to server for debugging
       await logErrorToServer('WebAuthn Authentication', err);
