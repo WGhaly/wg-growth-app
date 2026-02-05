@@ -31,6 +31,14 @@ export const permissionScopeEnum = pgEnum('permission_scope', ['profile', 'ident
 // CORE TABLES
 // ============================================================================
 
+// WebAuthn Challenges (for passwordless authentication)
+export const webauthnChallenges = pgTable('webauthn_challenges', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  challenge: varchar('challenge', { length: 512 }).notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+});
+
 // Users & Authentication
 export const users = pgTable('users', {
   id: uuid('id').primaryKey().defaultRandom(),

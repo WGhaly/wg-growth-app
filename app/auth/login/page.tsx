@@ -18,7 +18,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [hasBiometricEmail, setHasBiometricEmail] = useState(false);
   const [isStandalone, setIsStandalone] = useState(true);
-  const { authenticateWithCredential, isLoading: isBiometricLoading } = useWebAuthn();
+  const { authenticateWithCredential, authenticatePasswordless, isLoading: isBiometricLoading } = useWebAuthn();
 
   // Check for stored biometric email and standalone mode
   useEffect(() => {
@@ -67,10 +67,23 @@ export default function LoginPage() {
 
   async function handleBiometricLogin() {
     console.log('[Login] Biometric button clicked');
-    console.log('[Login] Email:', email);
-    console.log('[Login] Has biometric email:', hasBiometricEmail);
     
     try {
+      // First, try passwordless authentication (discoverable credentials)
+      console.log('[Login] Attempting passwordless authentication...');
+      const passwordlessSuccess = await authenticatePasswordless();
+      
+      if (passwordlessSuccess) {
+        console.log('[Login] Passwordless authentication successful!');
+        router.push('/dashboard');
+        return;
+      }
+      
+      // Fallback: If passwordless failed, try email-based authentication
+      console.log('[Login] Passwordless failed, trying email-based authentication');
+      console.log('[Login] Email:', email);
+      console.log('[Login] Has biometric email:', hasBiometricEmail);
+      
       // Get stored email if not already set
       let emailToUse = email;
       if (!emailToUse) {
@@ -80,7 +93,7 @@ export default function LoginPage() {
           emailToUse = storedEmail;
           setEmail(storedEmail);
         } else {
-          setError('Please enter your email first or set up biometrics');
+          setError('Please enter your email first or set up biometrics with discoverable credentials');
           return;
         }
       }

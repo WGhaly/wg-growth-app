@@ -1,33 +1,93 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { users } from '@/db/schema';
-import { eq } from 'drizzle-orm';
+import { users, webauthnChallenges } from '@/db/schema';
+import { eq, gt, desc } from 'drizzle-orm';
 import { verifyWebAuthnAuthentication, credentialToAuthenticatorDevice } from '@/lib/webauthn';
 import type { AuthenticationResponseJSON } from '@simplewebauthn/types';
 
 export async function POST(req: NextRequest) {
   try {
-    const body: { email: string; response: AuthenticationResponseJSON } = await req.json();
-    console.log('[WebAuthn Auth Verify] Request for email:', body.email, 'Response ID:', body.response?.id);
+    const body: { email?: string; response: AuthenticationResponseJSON } = await req.json();
+    console.log('[WebAuthn Auth Verify] Request - email:', body.email, 'Response ID:', body.response?.id, 'UserHandle:', body.response?.response?.userHandle);
 
-    if (!body.email || !body.response) {
-      console.error('[WebAuthn Auth Verify] Missing email or response');
+    if (!body.response) {
+      console.error('[WebAuthn Auth Verify] Missing response');
       return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
     }
 
-    // Get user data
-    const [user] = await db
-      .select()
-      .from(users)
-      .where(eq(users.email, body.email))
-      .limit(1);
-    
-    console.log('[WebAuthn Auth Verify] User found:', !!user, 'Has challenge:', !!user?.webauthnChallenge);
+    let user;
+    let challenge: string | null = null;
 
-    if (!user || !user.webauthnChallenge) {
-      return NextResponse.json({ error: 'Invalid state' }, { status: 400 });
+    // Passwordless flow - use userHandle from response
+    if (!body.email && body.response.response.userHandle) {
+      console.log('[WebAuthn Auth Verify] Passwordless flow - using userHandle');
+      
+      // Decode userHandle (base64url) to get user ID
+      const userHandle = body.response.response.userHandle;
+      const userId = Buffer.from(userHandle, 'base64url').toString('utf-8');
+      console.log('[WebAuthn Auth Verify] Decoded user ID:', userId);
+      
+      // Get user by ID
+      const [foundUser] = await db
+        .select()
+        .from(users)
+        .where(eq(users.id, userId))
+        .limit(1);
+      
+      user = foundUser;
+      console.log('[WebAuthn Auth Verify] User found by userHandle:', !!user);
+      
+      if (!user) {
+        return NextResponse.json({ error: 'User not found' }, { status: 400 });
+      }
+      
+      // Get challenge from challenges table
+      const [challengeRecord] = await db
+        .select()
+        .from(webauthnChallenges)
+        .where(gt(webauthnChallenges.expiresAt, new Date()))
+        .orderBy(desc(webauthnChallenges.createdAt))
+        .limit(1);
+      
+      if (!challengeRecord) {
+        console.error('[WebAuthn Auth Verify] No valid challenge found');
+        return NextResponse.json({ error: 'Challenge expired or not found' }, { status: 400 });
+      }
+      
+      challenge = challengeRecord.challenge;
+      console.log('[WebAuthn Auth Verify] Challenge found from table');
+      
+      // Delete used challenge
+      await db.delete(webauthnChallenges).where(eq(webauthnChallenges.id, challengeRecord.id));
+    } 
+    // Traditional email-based flow
+    else if (body.email) {
+      console.log('[WebAuthn Auth Verify] Traditional flow - using email');
+      
+      // Get user data
+      const [foundUser] = await db
+        .select()
+        .from(users)
+        .where(eq(users.email, body.email))
+        .limit(1);
+      
+      user = foundUser;
+      console.log('[WebAuthn Auth Verify] User found by email:', !!user, 'Has challenge:', !!user?.webauthnChallenge);
+
+      if (!user || !user.webauthnChallenge) {
+        return NextResponse.json({ error: 'Invalid state' }, { status: 400 });
+      }
+      
+      challenge = user.webauthnChallenge;
+    } 
+    // No email and no userHandle
+    else {
+      console.error('[WebAuthn Auth Verify] Neither email nor userHandle provided');
+      return NextResponse.json({ error: 'Email or userHandle required' }, { status: 400 });
     }
 
+    // At this point we have: user, challenge
+    // Continue with verification
     // Parse existing credentials
     const existingCredentials = Array.isArray(user.webauthnCredentials)
       ? user.webauthnCredentials
@@ -62,7 +122,7 @@ export async function POST(req: NextRequest) {
     // Verify authentication response
     const verification = await verifyWebAuthnAuthentication(
       body.response,
-      user.webauthnChallenge,
+      challenge,
       authenticator
     );
     

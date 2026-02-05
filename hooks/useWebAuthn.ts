@@ -197,9 +197,93 @@ export function useWebAuthn() {
     }
   };
 
+  // Authenticate with passwordless (discoverable credentials)
+  const authenticatePasswordless = async (): Promise<boolean> => {
+    console.log('[useWebAuthn] Starting passwordless authentication');
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      console.log('[useWebAuthn] Fetching passwordless authentication options...');
+      // Get authentication options from server (no email)
+      const optionsResponse = await fetch('/api/webauthn/authenticate/options', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}) // No email for passwordless
+      });
+
+      console.log('[useWebAuthn] Options response status:', optionsResponse.status);
+      if (!optionsResponse.ok) {
+        const errorText = await optionsResponse.text();
+        console.error('[useWebAuthn] Options response error:', errorText);
+        throw new Error('Failed to get authentication options');
+      }
+
+      const options = await optionsResponse.json();
+      console.log('[useWebAuthn] Got options, starting browser authentication...');
+
+      // Start authentication with browser (will use discoverable credentials)
+      const authenticationResponse: AuthenticationResponseJSON = await startAuthentication(options);
+      console.log('[useWebAuthn] Browser authentication complete, userHandle:', authenticationResponse.response.userHandle);
+
+      // Verify authentication with server (no email, server uses userHandle)
+      console.log('[useWebAuthn] Verifying with server...');
+      const verifyResponse = await fetch('/api/webauthn/authenticate/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          response: authenticationResponse
+        })
+      });
+
+      console.log('[useWebAuthn] Verify response status:', verifyResponse.status);
+      if (!verifyResponse.ok) {
+        const errorText = await verifyResponse.text();
+        console.error('[useWebAuthn] Verify response error:', errorText);
+        throw new Error('Authentication verification failed');
+      }
+
+      const result = await verifyResponse.json();
+      console.log('[useWebAuthn] Verification result:', result);
+
+      if (!result.verified) {
+        throw new Error('Authentication verification failed');
+      }
+
+      // Sign in with NextAuth using biometric verification
+      console.log('[useWebAuthn] Creating NextAuth session...');
+      const { signIn } = await import('next-auth/react');
+      const signInResult = await signIn('credentials', {
+        email: result.user?.email, // Email from verification result
+        biometricVerified: 'true',
+        redirect: false
+      });
+
+      console.log('[useWebAuthn] SignIn result:', signInResult);
+      if (signInResult?.error) {
+        throw new Error('Failed to create session: ' + signInResult.error);
+      }
+
+      setIsLoading(false);
+      console.log('[useWebAuthn] Passwordless authentication successful!');
+      
+      return true;
+    } catch (err: any) {
+      console.error('[useWebAuthn] Passwordless authentication error:', err);
+      
+      // Log to server for debugging
+      await logErrorToServer('WebAuthn Passwordless Authentication', err);
+      
+      setError(err.message || 'Failed to authenticate with biometric');
+      setIsLoading(false);
+      return false;
+    }
+  };
+
   return {
     registerCredential,
     authenticateWithCredential,
+    authenticatePasswordless,
     isLoading,
     error
   };

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { users } from '@/db/schema';
+import { users, webauthnChallenges } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { generateWebAuthnAuthenticationOptions, credentialToAuthenticatorDevice } from '@/lib/webauthn';
 
@@ -9,11 +9,27 @@ export async function POST(req: NextRequest) {
     const { email } = await req.json();
     console.log('[WebAuthn Auth Options] Request for email:', email);
 
+    // Passwordless flow - no email provided
     if (!email) {
-      console.error('[WebAuthn Auth Options] No email provided');
-      return NextResponse.json({ error: 'Email is required' }, { status: 400 });
+      console.log('[WebAuthn Auth Options] Passwordless authentication - generating discoverable credential options');
+      
+      // Generate options without allowCredentials for discoverable credentials
+      const options = await generateWebAuthnAuthenticationOptions();
+      
+      // Store challenge in temporary table (expires in 5 minutes)
+      const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
+      await db.insert(webauthnChallenges).values({
+        challenge: options.challenge,
+        expiresAt
+      });
+      
+      console.log('[WebAuthn Auth Options] Passwordless options generated and challenge stored');
+      return NextResponse.json(options);
     }
 
+    // Traditional flow - email provided
+    console.log('[WebAuthn Auth Options] Traditional email-based authentication');
+    
     // Get user data
     const [user] = await db
       .select()

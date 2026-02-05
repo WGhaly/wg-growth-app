@@ -111,7 +111,7 @@ export async function generateWebAuthnRegistrationOptions(
       transports: device.transports
     })),
     authenticatorSelection: {
-      residentKey: 'preferred',
+      residentKey: 'required', // Required for passwordless/discoverable credentials
       userVerification: 'preferred',
       authenticatorAttachment: 'platform' // Prefer platform authenticators (Face ID, Touch ID)
     }
@@ -143,18 +143,23 @@ export async function verifyWebAuthnRegistration(
 // ============================================================================
 
 export async function generateWebAuthnAuthenticationOptions(
-  existingCredentials: AuthenticatorDevice[] = []
+  existingCredentials?: AuthenticatorDevice[]
 ): Promise<ReturnType<typeof generateAuthenticationOptions>> {
   const options: GenerateAuthenticationOptionsOpts = {
     timeout: 60000,
-    allowCredentials: existingCredentials.map(device => ({
-      id: device.credentialID,
-      type: 'public-key',
-      transports: device.transports
-    })),
     userVerification: 'preferred',
     rpID: RP_ID
   };
+
+  // Only include allowCredentials if we have credentials (traditional flow)
+  // For passwordless flow, omit this to allow discoverable credentials
+  if (existingCredentials && existingCredentials.length > 0) {
+    options.allowCredentials = existingCredentials.map(device => ({
+      id: device.credentialID,
+      type: 'public-key',
+      transports: device.transports
+    }));
+  }
 
   return generateAuthenticationOptions(options);
 }
