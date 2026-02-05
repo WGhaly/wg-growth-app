@@ -54,11 +54,11 @@ export function ContactsImportButton() {
           const fullName = contact.name?.[0] || 'Unknown';
           const nameParts = fullName.split(' ');
           const firstName = nameParts[0] || 'Unknown';
-          const lastName = nameParts.slice(1).join(' ') || null;
+          const lastName = nameParts.slice(1).join(' ') || undefined;
 
           // Get phone and email
-          const phoneNumber = contact.tel?.[0] || null;
-          const email = contact.email?.[0] || null;
+          const phoneNumber = contact.tel?.[0] || undefined;
+          const email = contact.email?.[0] || undefined;
 
           // Create person with default values
           const result = await createPerson({
