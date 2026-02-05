@@ -3,8 +3,8 @@ import { db } from '@/lib/db';
 import { sql } from 'drizzle-orm';
 
 // One-time migration endpoint to create webauthn_challenges table
-// Call this once after deployment to create the table
-export async function POST(req: NextRequest) {
+// Call this once after deployment to create the table  
+export async function GET(req: NextRequest) {
   try {
     console.log('[Migration] Creating webauthn_challenges table...');
 
