@@ -5,11 +5,14 @@ import { Button } from '@/components/ui/Button';
 import { Alert } from '@/components/ui/Alert';
 import { UserPlus, AlertCircle } from 'lucide-react';
 import { createPerson } from '@/actions/relationships';
+import { ContactBrowser } from './ContactBrowser';
+import { ContactConfigModal, ContactConfig } from './ContactConfigModal';
 
 interface Contact {
-  name?: string[];
-  tel?: string[];
-  email?: string[];
+  id: string;
+  name: string;
+  phone?: string;
+  email?: string;
 }
 
 export function ContactsImportButton() {
@@ -18,17 +21,20 @@ export function ContactsImportButton() {
   const [isSupported, setIsSupported] = useState(false);
   const [isClient, setIsClient] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
+  
+  // New state for browse-then-add flow
+  const [availableContacts, setAvailableContacts] = useState<Contact[]>([]);
+  const [addedContactIds, setAddedContactIds] = useState<Set<string>>(new Set());
+  const [showBrowser, setShowBrowser] = useState(false);
+  const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
 
   useEffect(() => {
-    // Only check support on client-side
     setIsClient(true);
     
-    // Detect iOS
     const iOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
                 (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
     setIsIOS(iOS);
     
-    // Contact Picker API is only supported on Chrome/Edge for Android, not iOS
     if (typeof window !== 'undefined' && 'contacts' in navigator) {
       setIsSupported(true);
     }
@@ -39,31 +45,33 @@ export function ContactsImportButton() {
     const contacts: Contact[] = [];
     const vcards = vcardText.split('BEGIN:VCARD').filter(Boolean);
 
-    for (const vcard of vcards) {
+    for (let i = 0; i < vcards.length; i++) {
+      const vcard = vcards[i];
       const lines = vcard.split('\n');
-      const contact: Contact = {};
+      let name = '';
+      let phone = '';
+      let email = '';
 
       for (const line of lines) {
         const trimmed = line.trim();
         if (trimmed.startsWith('FN:')) {
-          contact.name = [trimmed.substring(3)];
+          name = trimmed.substring(3);
         } else if (trimmed.startsWith('TEL')) {
           const telMatch = trimmed.match(/:(.*)/);
-          if (telMatch) {
-            contact.tel = contact.tel || [];
-            contact.tel.push(telMatch[1]);
-          }
+          if (telMatch && !phone) phone = telMatch[1];
         } else if (trimmed.startsWith('EMAIL')) {
           const emailMatch = trimmed.match(/:(.*)/);
-          if (emailMatch) {
-            contact.email = contact.email || [];
-            contact.email.push(emailMatch[1]);
-          }
+          if (emailMatch && !email) email = emailMatch[1];
         }
       }
 
-      if (contact.name) {
-        contacts.push(contact);
+      if (name || phone || email) {
+        contacts.push({
+          id: `vcard-${i}`,
+          name: name || 'Unknown',
+          phone: phone || undefined,
+          email: email || undefined
+        });
       }
     }
 
@@ -87,85 +95,69 @@ export function ContactsImportButton() {
         return;
       }
 
-      await importContactsToDatabase(contacts);
+      // Show browser instead of bulk importing
+      setAvailableContacts(contacts);
+      setAddedContactIds(new Set());
+      setShowBrowser(true);
+      setMessage({ 
+        type: 'success', 
+        text: `Found ${contacts.length} contacts. Select which ones to add.` 
+      });
     } catch (error) {
       console.error('File import error:', error);
       setMessage({ type: 'error', text: 'Failed to read contact file' });
     } finally {
       setIsImporting(false);
-      // Reset file input
       event.target.value = '';
     }
   };
 
-  // Shared import logic
-  const importContactsToDatabase = async (contacts: Contact[]) => {
-    let imported = 0;
-    let failed = 0;
-    let skipped = 0;
+  // Handle adding a single contact with configuration
+  const handleAddContact = (contact: Contact) => {
+    setSelectedContact(contact);
+  };
 
-    for (const contact of contacts) {
-      try {
-        // Parse name
-        const fullName = contact.name?.[0] || 'Unknown';
-        const nameParts = fullName.split(' ');
-        const firstName = nameParts[0] || 'Unknown';
-        const lastName = nameParts.slice(1).join(' ') || undefined;
-
-        // Get phone and email
-        const phoneNumber = contact.tel?.[0] || undefined;
-        const email = contact.email?.[0] || undefined;
-
-        // Skip if no identifiable information
-        if (!phoneNumber && !email && firstName === 'Unknown') {
-          skipped++;
-          continue;
-        }
-
-        // Create person with default values
-        const result = await createPerson({
-          firstName,
-          lastName,
-          relationshipType: 'friend',
-          circle: 'outer',
-          trustLevel: 'medium',
-          phoneNumber,
-          email,
-          notes: 'Imported from contacts'
-        });
-
-        if (result.success) {
-          imported++;
-        } else {
-          failed++;
-          console.error('Failed to import contact:', fullName, result.error);
-        }
-      } catch (error) {
-        failed++;
-        console.error('Error importing contact:', error);
-      }
-    }
-
-    if (imported > 0) {
-      setMessage({
-        type: 'success',
-        text: `✅ Imported ${imported} contact${imported > 1 ? 's' : ''}!${skipped > 0 ? ` Skipped ${skipped} duplicate${skipped > 1 ? 's' : ''}.` : ''}${failed > 0 ? ` ${failed} failed.` : ''} You can import again anytime to add new contacts.`
-      });
+  // Handle saving the configured contact
+  const handleSaveContact = async (config: ContactConfig) => {
+    try {
+      setIsImporting(true);
       
-      // Refresh the page to show new contacts
+      const result = await createPerson(config);
+
+      if (result.success) {
+        // Mark contact as added
+        setAddedContactIds(prev => new Set(prev).add(selectedContact!.id));
+        setSelectedContact(null);
+        setMessage({ 
+          type: 'success', 
+          text: `✅ ${config.firstName} added to relationships!` 
+        });
+        
+        // Clear message after 3 seconds
+        setTimeout(() => setMessage(null), 3000);
+      } else {
+        setMessage({ type: 'error', text: result.error || 'Failed to add contact' });
+      }
+    } catch (error) {
+      console.error('Error adding contact:', error);
+      setMessage({ type: 'error', text: 'Failed to add contact' });
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
+  // Handle closing the browser
+  const handleCloseBrowser = () => {
+    setShowBrowser(false);
+    if (addedContactIds.size > 0) {
+      // Refresh page to show new contacts
       setTimeout(() => {
         window.location.reload();
-      }, 3000);
-    } else {
-      setMessage({
-        type: 'error',
-        text: `No contacts imported. ${skipped > 0 ? `${skipped} were duplicates. ` : ''}${failed > 0 ? `${failed} failed.` : ''}`
-      });
+      }, 500);
     }
   };
 
   const handleImportContacts = async () => {
-    // Check if Contact Picker API is supported
     if (!('contacts' in navigator)) {
       setMessage({
         type: 'error',
@@ -178,19 +170,33 @@ export function ContactsImportButton() {
       setIsImporting(true);
       setMessage(null);
 
-      // Request contacts from the user's device
       const props = ['name', 'tel', 'email'];
       const opts = { multiple: true };
 
       // @ts-ignore - Contact Picker API types
-      const contacts = await navigator.contacts.select(props, opts);
+      const rawContacts = await navigator.contacts.select(props, opts);
 
-      if (!contacts || contacts.length === 0) {
+      if (!rawContacts || rawContacts.length === 0) {
         setMessage({ type: 'error', text: 'No contacts selected' });
         return;
       }
 
-      await importContactsToDatabase(contacts as Contact[]);
+      // Convert to Contact format
+      const contacts: Contact[] = rawContacts.map((c: any, i: number) => ({
+        id: `picker-${i}`,
+        name: c.name?.[0] || 'Unknown',
+        phone: c.tel?.[0] || undefined,
+        email: c.email?.[0] || undefined
+      }));
+
+      // Show browser instead of bulk importing
+      setAvailableContacts(contacts);
+      setAddedContactIds(new Set());
+      setShowBrowser(true);
+      setMessage({ 
+        type: 'success', 
+        text: `Found ${contacts.length} contacts. Select which ones to add.` 
+      });
     } catch (error: any) {
       console.error('Contact picker error:', error);
       
@@ -226,47 +232,72 @@ export function ContactsImportButton() {
   }
 
   return (
-    <div className="space-y-3">
-      {/* Android: Direct Contact Picker */}
-      {isSupported && !isIOS && (
-        <>
-          <Button
-            onClick={handleImportContacts}
-            disabled={isImporting}
-            variant="secondary"
-            fullWidth
-          >
-            <UserPlus size={18} className="mr-2" />
-            {isImporting ? 'Importing...' : 'Import Contacts'}
-          </Button>
-          <p className="text-xs text-text-tertiary text-center">
-            ✨ Direct import available on your device
-          </p>
-        </>
-      )}
+    <>
+      <div className="space-y-3">
+        {/* Android: Direct Contact Picker */}
+        {isSupported && !isIOS && (
+          <>
+            <Button
+              onClick={handleImportContacts}
+              disabled={isImporting}
+              variant="secondary"
+              fullWidth
+            >
+              <UserPlus size={18} className="mr-2" />
+              {isImporting ? 'Loading...' : 'Select Contacts to Add'}
+            </Button>
+            <p className="text-xs text-text-tertiary text-center">
+              ✨ Choose contacts from your device
+            </p>
+          </>
+        )}
 
-      {/* iOS: Show helpful instructions */}
-      {isIOS && (
-        <>
-          <div className="bg-surface-secondary rounded-lg p-4 space-y-3">
-            <div className="flex items-start gap-2">
-              <AlertCircle size={16} className="text-text-tertiary mt-0.5 flex-shrink-0" />
-              <div className="text-sm text-text-secondary">
-                <p className="font-medium mb-1">iOS Contact Import</p>
-                <p className="text-xs text-text-tertiary">
-                  Apple doesn't allow web apps to access contacts directly. Here's the quickest way:
-                </p>
+        {/* iOS: Show helpful instructions */}
+        {isIOS && (
+          <>
+            <div className="bg-surface-secondary rounded-lg p-4 space-y-3">
+              <div className="flex items-start gap-2">
+                <AlertCircle size={16} className="text-text-tertiary mt-0.5 flex-shrink-0" />
+                <div className="text-sm text-text-secondary">
+                  <p className="font-medium mb-1">Import from Contacts</p>
+                  <p className="text-xs text-text-tertiary">
+                    Export your contacts as a .vcf file, then select which ones to add.
+                  </p>
+                </div>
               </div>
+
+              <ol className="text-xs text-text-secondary space-y-2 pl-4 list-decimal">
+                <li>Open <strong>Contacts</strong> app</li>
+                <li>Tap a contact → <strong>Share Contact</strong></li>
+                <li>Select <strong>multiple contacts</strong></li>
+                <li>Choose <strong>Save to Files</strong></li>
+                <li>Come back and upload the file below</li>
+              </ol>
+
+              <input
+                type="file"
+                id="contact-file-input"
+                accept=".vcf,.vcard"
+                onChange={handleFileImport}
+                disabled={isImporting}
+                className="hidden"
+              />
+              <Button
+                onClick={() => document.getElementById('contact-file-input')?.click()}
+                disabled={isImporting}
+                variant="primary"
+                fullWidth
+              >
+                <UserPlus size={18} className="mr-2" />
+                {isImporting ? 'Loading...' : 'Upload Contact File'}
+              </Button>
             </div>
+          </>
+        )}
 
-            <ol className="text-xs text-text-secondary space-y-2 pl-4 list-decimal">
-              <li>Open <strong>Contacts</strong> app on your iPhone</li>
-              <li>Tap any contact → <strong>Share Contact</strong></li>
-              <li>Select <strong>multiple contacts</strong> (or all)</li>
-              <li>Choose <strong>Save to Files</strong></li>
-              <li>Come back here and tap the button below</li>
-            </ol>
-
+        {/* Fallback for other platforms */}
+        {!isSupported && !isIOS && (
+          <>
             <input
               type="file"
               id="contact-file-input"
@@ -278,51 +309,47 @@ export function ContactsImportButton() {
             <Button
               onClick={() => document.getElementById('contact-file-input')?.click()}
               disabled={isImporting}
-              variant="primary"
+              variant="secondary"
               fullWidth
             >
               <UserPlus size={18} className="mr-2" />
-              {isImporting ? 'Importing...' : 'Select Exported File'}
+              {isImporting ? 'Loading...' : 'Upload vCard File'}
             </Button>
-          </div>
-        </>
-      )}
+            <p className="text-xs text-text-tertiary text-center">
+              Export contacts as .vcf file, then select which to add
+            </p>
+          </>
+        )}
 
-      {/* Fallback for other platforms */}
-      {!isSupported && !isIOS && (
-        <>
-          <input
-            type="file"
-            id="contact-file-input"
-            accept=".vcf,.vcard"
-            onChange={handleFileImport}
-            disabled={isImporting}
-            className="hidden"
-          />
-          <Button
-            onClick={() => document.getElementById('contact-file-input')?.click()}
-            disabled={isImporting}
-            variant="secondary"
-            fullWidth
+        {message && (
+          <Alert
+            variant={message.type === 'error' ? 'error' : 'success'}
+            onClose={() => setMessage(null)}
           >
-            <UserPlus size={18} className="mr-2" />
-            {isImporting ? 'Importing...' : 'Import from vCard File'}
-          </Button>
-          <p className="text-xs text-text-tertiary text-center">
-            Export contacts as .vcf file, then import here
-          </p>
-        </>
+            {message.type === 'error' && <AlertCircle size={16} className="mr-2" />}
+            {message.text}
+          </Alert>
+        )}
+      </div>
+
+      {/* Contact Browser Modal */}
+      {showBrowser && (
+        <ContactBrowser
+          contacts={availableContacts}
+          addedContactIds={addedContactIds}
+          onAddContact={handleAddContact}
+          onClose={handleCloseBrowser}
+        />
       )}
 
-      {message && (
-        <Alert
-          variant={message.type === 'error' ? 'error' : 'success'}
-          onClose={() => setMessage(null)}
-        >
-          {message.type === 'error' && <AlertCircle size={16} className="mr-2" />}
-          {message.text}
-        </Alert>
+      {/* Contact Configuration Modal */}
+      {selectedContact && (
+        <ContactConfigModal
+          contact={selectedContact}
+          onSave={handleSaveContact}
+          onCancel={() => setSelectedContact(null)}
+        />
       )}
-    </div>
+    </>
   );
 }
