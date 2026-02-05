@@ -20,10 +20,15 @@ export default function LoginPage() {
   const [isStandalone, setIsStandalone] = useState(true);
   const { authenticateWithCredential, isLoading: isBiometricLoading } = useWebAuthn();
 
+  // Debug: Log state changes
+  console.log('[Login Page Render] email:', email, 'hasBiometricEmail:', hasBiometricEmail, 'disabled:', !email && !hasBiometricEmail);
+
   // Check for stored biometric email and standalone mode
   useEffect(() => {
+    console.log('[Login Page useEffect] Running initialization');
     if (typeof window !== 'undefined') {
       const storedEmail = localStorage.getItem('biometric_email');
+      console.log('[Login Page useEffect] Stored email from localStorage:', storedEmail);
       if (storedEmail) {
         setEmail(storedEmail);
         setHasBiometricEmail(true);
@@ -32,6 +37,7 @@ export default function LoginPage() {
       const standalone = window.matchMedia('(display-mode: standalone)').matches || 
                         (window.navigator as any).standalone === true;
       setIsStandalone(standalone);
+      console.log('[Login Page useEffect] Initialization complete');
     }
   }, []);
 
@@ -170,6 +176,15 @@ export default function LoginPage() {
             <Fingerprint size={18} className="mr-2" />
             Sign in with Biometric
           </Button>
+
+          {/* Debug Panel */}
+          <div className="mt-4 p-3 bg-gray-100 dark:bg-gray-800 rounded text-xs font-mono">
+            <div className="font-bold mb-2">Debug Info:</div>
+            <div>email: {email || '(empty)'}</div>
+            <div>hasBiometricEmail: {hasBiometricEmail ? 'true' : 'false'}</div>
+            <div>button disabled: {(!email && !hasBiometricEmail) ? 'YES' : 'NO'}</div>
+            <div>isBiometricLoading: {isBiometricLoading ? 'true' : 'false'}</div>
+          </div>
         </CardContent>
 
         <CardFooter className="flex-col gap-4">
