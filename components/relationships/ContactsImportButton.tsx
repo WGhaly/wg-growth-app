@@ -21,17 +21,141 @@ export function ContactsImportButton() {
   useEffect(() => {
     // Only check support on client-side
     setIsClient(true);
-    if (typeof window !== 'undefined' && 'contacts' in navigator && 'ContactsManager' in window) {
+    // Contact Picker API is only supported on Chrome/Edge for Android, not iOS
+    if (typeof window !== 'undefined' && 'contacts' in navigator) {
       setIsSupported(true);
     }
   }, []);
 
-  const handleImportContacts = async () => {
-    // Check if Contact Picker API is supported
-    if (!('contacts' in navigator && 'ContactsManager' in window)) {
+  // Parse vCard text to extract contact info
+  const parseVCard = (vcardText: string): Contact[] => {
+    const contacts: Contact[] = [];
+    const vcards = vcardText.split('BEGIN:VCARD').filter(Boolean);
+
+    for (const vcard of vcards) {
+      const lines = vcard.split('\n');
+      const contact: Contact = {};
+
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (trimmed.startsWith('FN:')) {
+          contact.name = [trimmed.substring(3)];
+        } else if (trimmed.startsWith('TEL')) {
+          const telMatch = trimmed.match(/:(.*)/);
+          if (telMatch) {
+            contact.tel = contact.tel || [];
+            contact.tel.push(telMatch[1]);
+          }
+        } else if (trimmed.startsWith('EMAIL')) {
+          const emailMatch = trimmed.match(/:(.*)/);
+          if (emailMatch) {
+            contact.email = contact.email || [];
+            contact.email.push(emailMatch[1]);
+          }
+        }
+      }
+
+      if (contact.name) {
+        contacts.push(contact);
+      }
+    }
+
+    return contacts;
+  };
+
+  // Handle file import for vCard files
+  const handleFileImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setIsImporting(true);
+      setMessage(null);
+
+      const text = await file.text();
+      const contacts = parseVCard(text);
+
+      if (contacts.length === 0) {
+        setMessage({ type: 'error', text: 'No valid contacts found in file' });
+        return;
+      }
+
+      await importContactsToDatabase(contacts);
+    } catch (error) {
+      console.error('File import error:', error);
+      setMessage({ type: 'error', text: 'Failed to read contact file' });
+    } finally {
+      setIsImporting(false);
+      // Reset file input
+      event.target.value = '';
+    }
+  };
+
+  // Shared import logic
+  const importContactsToDatabase = async (contacts: Contact[]) => {
+    let imported = 0;
+    let failed = 0;
+
+    for (const contact of contacts) {
+      try {
+        // Parse name
+        const fullName = contact.name?.[0] || 'Unknown';
+        const nameParts = fullName.split(' ');
+        const firstName = nameParts[0] || 'Unknown';
+        const lastName = nameParts.slice(1).join(' ') || undefined;
+
+        // Get phone and email
+        const phoneNumber = contact.tel?.[0] || undefined;
+        const email = contact.email?.[0] || undefined;
+
+        // Create person with default values
+        const result = await createPerson({
+          firstName,
+          lastName,
+          relationshipType: 'friend',
+          circle: 'outer',
+          trustLevel: 'medium',
+          phoneNumber,
+          email,
+          notes: 'Imported from contacts'
+        });
+
+        if (result.success) {
+          imported++;
+        } else {
+          failed++;
+          console.error('Failed to import contact:', fullName, result.error);
+        }
+      } catch (error) {
+        failed++;
+        console.error('Error importing contact:', error);
+      }
+    }
+
+    if (imported > 0) {
+      setMessage({
+        type: 'success',
+        text: `Successfully imported ${imported} contact${imported > 1 ? 's' : ''}${failed > 0 ? `. ${failed} failed.` : '.'} Please review and update their details.`
+      });
+      
+      // Refresh the page to show new contacts
+      setTimeout(() => {
+        window.location.reload();
+      }, 2000);
+    } else {
       setMessage({
         type: 'error',
-        text: 'Contact picker is not supported on this device. This feature requires iOS 14+ Safari or Chrome 80+.'
+        text: `Failed to import contacts. ${failed} contact${failed > 1 ? 's' : ''} could not be imported.`
+      });
+    }
+  };
+
+  const handleImportContacts = async () => {
+    // Check if Contact Picker API is supported
+    if (!('contacts' in navigator)) {
+      setMessage({
+        type: 'error',
+        text: 'Contact picker is not supported on iOS/Safari. Please use the "Import from File" button below to upload a vCard (.vcf) file from your contacts.'
       });
       setIsSupported(false);
       return;
@@ -53,62 +177,7 @@ export function ContactsImportButton() {
         return;
       }
 
-      let imported = 0;
-      let failed = 0;
-
-      // Import each contact
-      for (const contact of contacts as Contact[]) {
-        try {
-          // Parse name
-          const fullName = contact.name?.[0] || 'Unknown';
-          const nameParts = fullName.split(' ');
-          const firstName = nameParts[0] || 'Unknown';
-          const lastName = nameParts.slice(1).join(' ') || undefined;
-
-          // Get phone and email
-          const phoneNumber = contact.tel?.[0] || undefined;
-          const email = contact.email?.[0] || undefined;
-
-          // Create person with default values
-          const result = await createPerson({
-            firstName,
-            lastName,
-            relationshipType: 'friend', // Default type
-            circle: 'outer', // Default to outer circle
-            trustLevel: 'medium', // Default trust level
-            phoneNumber,
-            email,
-            notes: 'Imported from contacts'
-          });
-
-          if (result.success) {
-            imported++;
-          } else {
-            failed++;
-            console.error('Failed to import contact:', fullName, result.error);
-          }
-        } catch (error) {
-          failed++;
-          console.error('Error importing contact:', error);
-        }
-      }
-
-      if (imported > 0) {
-        setMessage({
-          type: 'success',
-          text: `Successfully imported ${imported} contact${imported > 1 ? 's' : ''}${failed > 0 ? `. ${failed} failed.` : '.'} Please review and update their details.`
-        });
-        
-        // Refresh the page to show new contacts
-        setTimeout(() => {
-          window.location.reload();
-        }, 2000);
-      } else {
-        setMessage({
-          type: 'error',
-          text: `Failed to import contacts. ${failed} contact${failed > 1 ? 's' : ''} could not be imported.`
-        });
-      }
+      await importContactsToDatabase(contacts as Contact[]);
     } catch (error: any) {
       console.error('Contact picker error:', error);
       
@@ -145,15 +214,39 @@ export function ContactsImportButton() {
 
   return (
     <div className="space-y-3">
-      <Button
-        onClick={handleImportContacts}
-        disabled={isImporting || !isSupported}
-        variant="secondary"
-        fullWidth
-      >
-        <UserPlus size={18} className="mr-2" />
-        {isImporting ? 'Importing...' : 'Import from Contacts'}
-      </Button>
+      {/* Native Contact Picker (Android Chrome/Edge) */}
+      {isSupported && (
+        <Button
+          onClick={handleImportContacts}
+          disabled={isImporting}
+          variant="secondary"
+          fullWidth
+        >
+          <UserPlus size={18} className="mr-2" />
+          {isImporting ? 'Importing...' : 'Import from Contacts'}
+        </Button>
+      )}
+
+      {/* File Upload (iOS and all platforms) */}
+      <div>
+        <input
+          type="file"
+          id="contact-file-input"
+          accept=".vcf,.vcard"
+          onChange={handleFileImport}
+          disabled={isImporting}
+          className="hidden"
+        />
+        <Button
+          onClick={() => document.getElementById('contact-file-input')?.click()}
+          disabled={isImporting}
+          variant="secondary"
+          fullWidth
+        >
+          <UserPlus size={18} className="mr-2" />
+          {isImporting ? 'Importing...' : 'Import from File (.vcf)'}
+        </Button>
+      </div>
 
       {message && (
         <Alert
@@ -167,7 +260,7 @@ export function ContactsImportButton() {
 
       {!isSupported && (
         <p className="text-xs text-text-tertiary text-center">
-          Contact picker requires iOS 14+ Safari, Chrome 80+, or Edge 80+
+          💡 On iOS: Export contacts as vCard (.vcf) from the Contacts app, then import here
         </p>
       )}
     </div>
