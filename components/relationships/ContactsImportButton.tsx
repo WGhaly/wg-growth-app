@@ -17,10 +17,18 @@ export function ContactsImportButton() {
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [isSupported, setIsSupported] = useState(false);
   const [isClient, setIsClient] = useState(false);
+  const [showInstructions, setShowInstructions] = useState(false);
+  const [isIOS, setIsIOS] = useState(false);
 
   useEffect(() => {
     // Only check support on client-side
     setIsClient(true);
+    
+    // Detect iOS
+    const iOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+                (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    setIsIOS(iOS);
+    
     // Contact Picker API is only supported on Chrome/Edge for Android, not iOS
     if (typeof window !== 'undefined' && 'contacts' in navigator) {
       setIsSupported(true);
@@ -95,6 +103,7 @@ export function ContactsImportButton() {
   const importContactsToDatabase = async (contacts: Contact[]) => {
     let imported = 0;
     let failed = 0;
+    let skipped = 0;
 
     for (const contact of contacts) {
       try {
@@ -107,6 +116,12 @@ export function ContactsImportButton() {
         // Get phone and email
         const phoneNumber = contact.tel?.[0] || undefined;
         const email = contact.email?.[0] || undefined;
+
+        // Skip if no identifiable information
+        if (!phoneNumber && !email && firstName === 'Unknown') {
+          skipped++;
+          continue;
+        }
 
         // Create person with default values
         const result = await createPerson({
@@ -135,17 +150,17 @@ export function ContactsImportButton() {
     if (imported > 0) {
       setMessage({
         type: 'success',
-        text: `Successfully imported ${imported} contact${imported > 1 ? 's' : ''}${failed > 0 ? `. ${failed} failed.` : '.'} Please review and update their details.`
+        text: `✅ Imported ${imported} contact${imported > 1 ? 's' : ''}!${skipped > 0 ? ` Skipped ${skipped} duplicate${skipped > 1 ? 's' : ''}.` : ''}${failed > 0 ? ` ${failed} failed.` : ''} You can import again anytime to add new contacts.`
       });
       
       // Refresh the page to show new contacts
       setTimeout(() => {
         window.location.reload();
-      }, 2000);
+      }, 3000);
     } else {
       setMessage({
         type: 'error',
-        text: `Failed to import contacts. ${failed} contact${failed > 1 ? 's' : ''} could not be imported.`
+        text: `No contacts imported. ${skipped > 0 ? `${skipped} were duplicates. ` : ''}${failed > 0 ? `${failed} failed.` : ''}`
       });
     }
   };
@@ -155,9 +170,8 @@ export function ContactsImportButton() {
     if (!('contacts' in navigator)) {
       setMessage({
         type: 'error',
-        text: 'Contact picker is not supported on iOS/Safari. Please use the "Import from File" button below to upload a vCard (.vcf) file from your contacts.'
+        text: 'Direct contact import is not available on this device. Please use the file import option above.'
       });
-      setIsSupported(false);
       return;
     }
 
@@ -214,39 +228,92 @@ export function ContactsImportButton() {
 
   return (
     <div className="space-y-3">
-      {/* Native Contact Picker (Android Chrome/Edge) */}
-      {isSupported && (
-        <Button
-          onClick={handleImportContacts}
-          disabled={isImporting}
-          variant="secondary"
-          fullWidth
-        >
-          <UserPlus size={18} className="mr-2" />
-          {isImporting ? 'Importing...' : 'Import from Contacts'}
-        </Button>
+      {/* Android: Direct Contact Picker */}
+      {isSupported && !isIOS && (
+        <>
+          <Button
+            onClick={handleImportContacts}
+            disabled={isImporting}
+            variant="secondary"
+            fullWidth
+          >
+            <UserPlus size={18} className="mr-2" />
+            {isImporting ? 'Importing...' : 'Import Contacts'}
+          </Button>
+          <p className="text-xs text-text-tertiary text-center">
+            ✨ Direct import available on your device
+          </p>
+        </>
       )}
 
-      {/* File Upload (iOS and all platforms) */}
-      <div>
-        <input
-          type="file"
-          id="contact-file-input"
-          accept=".vcf,.vcard"
-          onChange={handleFileImport}
-          disabled={isImporting}
-          className="hidden"
-        />
-        <Button
-          onClick={() => document.getElementById('contact-file-input')?.click()}
-          disabled={isImporting}
-          variant="secondary"
-          fullWidth
-        >
-          <UserPlus size={18} className="mr-2" />
-          {isImporting ? 'Importing...' : 'Import from File (.vcf)'}
-        </Button>
-      </div>
+      {/* iOS: Show helpful instructions */}
+      {isIOS && (
+        <>
+          <div className="bg-surface-secondary rounded-lg p-4 space-y-3">
+            <div className="flex items-start gap-2">
+              <AlertCircle size={16} className="text-text-tertiary mt-0.5 flex-shrink-0" />
+              <div className="text-sm text-text-secondary">
+                <p className="font-medium mb-1">iOS Contact Import</p>
+                <p className="text-xs text-text-tertiary">
+                  Apple doesn't allow web apps to access contacts directly. Here's the quickest way:
+                </p>
+              </div>
+            </div>
+
+            <ol className="text-xs text-text-secondary space-y-2 pl-4 list-decimal">
+              <li>Open <strong>Contacts</strong> app on your iPhone</li>
+              <li>Tap any contact → <strong>Share Contact</strong></li>
+              <li>Select <strong>multiple contacts</strong> (or all)</li>
+              <li>Choose <strong>Save to Files</strong></li>
+              <li>Come back here and tap the button below</li>
+            </ol>
+
+            <input
+              type="file"
+              id="contact-file-input"
+              accept=".vcf,.vcard"
+              onChange={handleFileImport}
+              disabled={isImporting}
+              className="hidden"
+            />
+            <Button
+              onClick={() => document.getElementById('contact-file-input')?.click()}
+              disabled={isImporting}
+              variant="primary"
+              fullWidth
+            >
+              <UserPlus size={18} className="mr-2" />
+              {isImporting ? 'Importing...' : 'Select Exported File'}
+            </Button>
+          </div>
+        </>
+      )}
+
+      {/* Fallback for other platforms */}
+      {!isSupported && !isIOS && (
+        <>
+          <input
+            type="file"
+            id="contact-file-input"
+            accept=".vcf,.vcard"
+            onChange={handleFileImport}
+            disabled={isImporting}
+            className="hidden"
+          />
+          <Button
+            onClick={() => document.getElementById('contact-file-input')?.click()}
+            disabled={isImporting}
+            variant="secondary"
+            fullWidth
+          >
+            <UserPlus size={18} className="mr-2" />
+            {isImporting ? 'Importing...' : 'Import from vCard File'}
+          </Button>
+          <p className="text-xs text-text-tertiary text-center">
+            Export contacts as .vcf file, then import here
+          </p>
+        </>
+      )}
 
       {message && (
         <Alert
@@ -256,12 +323,6 @@ export function ContactsImportButton() {
           {message.type === 'error' && <AlertCircle size={16} className="mr-2" />}
           {message.text}
         </Alert>
-      )}
-
-      {!isSupported && (
-        <p className="text-xs text-text-tertiary text-center">
-          💡 On iOS: Export contacts as vCard (.vcf) from the Contacts app, then import here
-        </p>
       )}
     </div>
   );
