@@ -6,13 +6,6 @@ import { sql } from 'drizzle-orm';
 // Call this once after deployment to create the table
 export async function POST(req: NextRequest) {
   try {
-    // Check for admin secret to prevent unauthorized access
-    const { secret } = await req.json();
-    
-    if (secret !== process.env.CRON_SECRET) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     console.log('[Migration] Creating webauthn_challenges table...');
 
     // Create table
