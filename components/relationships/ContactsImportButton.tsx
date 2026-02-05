@@ -125,16 +125,25 @@ export function ContactsImportButton() {
       const result = await createPerson(config);
 
       if (result.success) {
-        // Mark contact as added
-        setAddedContactIds(prev => new Set(prev).add(selectedContact!.id));
+        // Mark contact as added (for iOS browser flow)
+        if (selectedContact) {
+          setAddedContactIds(prev => new Set(prev).add(selectedContact.id));
+        }
         setSelectedContact(null);
         setMessage({ 
           type: 'success', 
           text: `✅ ${config.firstName} added to relationships!` 
         });
         
-        // Clear message after 3 seconds
-        setTimeout(() => setMessage(null), 3000);
+        // For Android (direct picker), refresh immediately
+        if (!showBrowser) {
+          setTimeout(() => {
+            window.location.reload();
+          }, 1500);
+        } else {
+          // For iOS (browser), just clear message after 3 seconds
+          setTimeout(() => setMessage(null), 3000);
+        }
       } else {
         setMessage({ type: 'error', text: result.error || 'Failed to add contact' });
       }
@@ -161,7 +170,7 @@ export function ContactsImportButton() {
     if (!('contacts' in navigator)) {
       setMessage({
         type: 'error',
-        text: 'Direct contact import is not available on this device. Please use the file import option above.'
+        text: 'Direct contact import is not available on this device. Please use the file import option.'
       });
       return;
     }
@@ -171,36 +180,31 @@ export function ContactsImportButton() {
       setMessage(null);
 
       const props = ['name', 'tel', 'email'];
-      const opts = { multiple: true };
+      const opts = { multiple: false }; // Single contact selection
 
       // @ts-ignore - Contact Picker API types
       const rawContacts = await navigator.contacts.select(props, opts);
 
       if (!rawContacts || rawContacts.length === 0) {
-        setMessage({ type: 'error', text: 'No contacts selected' });
+        setMessage({ type: 'error', text: 'No contact selected' });
         return;
       }
 
-      // Convert to Contact format
-      const contacts: Contact[] = rawContacts.map((c: any, i: number) => ({
-        id: `picker-${i}`,
-        name: c.name?.[0] || 'Unknown',
-        phone: c.tel?.[0] || undefined,
-        email: c.email?.[0] || undefined
-      }));
+      // Get the single selected contact
+      const contact = rawContacts[0];
+      const selectedContact: Contact = {
+        id: 'picker-single',
+        name: contact.name?.[0] || 'Unknown',
+        phone: contact.tel?.[0] || undefined,
+        email: contact.email?.[0] || undefined
+      };
 
-      // Show browser instead of bulk importing
-      setAvailableContacts(contacts);
-      setAddedContactIds(new Set());
-      setShowBrowser(true);
-      setMessage({ 
-        type: 'success', 
-        text: `Found ${contacts.length} contacts. Select which ones to add.` 
-      });
+      // Show configuration modal immediately
+      setSelectedContact(selectedContact);
     } catch (error: any) {
       console.error('Contact picker error:', error);
       
-      let errorMessage = 'Failed to import contacts';
+      let errorMessage = 'Failed to import contact';
       if (error.name === 'InvalidStateError') {
         errorMessage = 'Contact picker is not available. Please ensure you\'re using a supported browser.';
       } else if (error.name === 'SecurityError') {
