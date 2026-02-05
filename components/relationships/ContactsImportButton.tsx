@@ -17,7 +17,6 @@ export function ContactsImportButton() {
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [isSupported, setIsSupported] = useState(false);
   const [isClient, setIsClient] = useState(false);
-  const [showInstructions, setShowInstructions] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
 
   useEffect(() => {
